@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { GlowCard } from '@/components/ui/GlowCard';
+import { GlowCard } from '@/components/ui/glow-card';
 
 interface ApiKey {
   id: string;

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { GlowCard } from '@/components/ui/GlowCard';
+import { GlowCard } from '@/components/ui/glow-card';
 import Link from 'next/link';
 
 interface ApiEndpoint {

@@ -32,8 +32,11 @@ export async function GET(request: NextRequest) {
     // List available models
     const modelsResponse = await genAI.models.list();
     
-    // The response structure is: { pageInternal: [...models] }
-    const modelsList = modelsResponse.pageInternal || [];
+    // Convert pager to array
+    const modelsList: any[] = [];
+    for await (const model of modelsResponse) {
+      modelsList.push(model);
+    }
     
     // Filter models that support generateContent
     const availableModels = modelsList

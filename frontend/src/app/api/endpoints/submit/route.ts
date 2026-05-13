@@ -73,7 +73,7 @@ Return ONLY valid JSON without any markdown formatting or code blocks.
     let aiAnalysis;
     try {
       // Remove markdown code blocks if present
-      const cleanedResponse = aiResponseText
+      const cleanedResponse = (aiResponseText || '')
         .replace(/```json\n?/g, '')
         .replace(/```\n?/g, '')
         .trim();
