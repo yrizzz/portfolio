@@ -51,7 +51,7 @@ export default function SettingsPage() {
 
   const loadAvailableModels = async () => {
     if (!geminiKey) {
-      setMessage('Please enter API key first');
+      setMessage('❌ Please enter API key first');
       return;
     }
 
@@ -59,23 +59,20 @@ export default function SettingsPage() {
     setMessage('Loading available models...');
     
     try {
-      // First save the API key so the backend can use it
-      await fetch('/api/config', {
+      // Fetch models using the API key (without saving yet)
+      const response = await fetch('/api/gemini/models', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          key: 'GEMINI_API_KEY',
-          value: geminiKey,
+          apiKey: geminiKey,
         }),
       });
-
-      // Then fetch models
-      const response = await fetch('/api/gemini/models');
+      
       const data = await response.json();
       
       if (data.success) {
         setAvailableModels(data.models);
-        setMessage(`✅ Found ${data.total} available models`);
+        setMessage(`✅ Found ${data.total} available models. Please select a model and save.`);
       } else {
         // Extract detailed error message
         let errorMsg = data.error || 'Unknown error';
@@ -93,9 +90,11 @@ export default function SettingsPage() {
         }
         
         setMessage(`❌ Failed to load models: ${errorMsg}`);
+        setAvailableModels([]); // Clear models on error
       }
     } catch (error: any) {
       setMessage(`❌ Error loading models: ${error.message}`);
+      setAvailableModels([]);
     } finally {
       setLoadingModels(false);
     }
@@ -109,6 +108,20 @@ export default function SettingsPage() {
       // Validate API key
       if (!geminiKey || geminiKey.length < 30) {
         setMessage('❌ Invalid API key. Please check and try again.');
+        setSaving(false);
+        return;
+      }
+
+      // Validate model selection
+      if (!selectedModel) {
+        setMessage('❌ Please select a model first.');
+        setSaving(false);
+        return;
+      }
+
+      // Validate that models have been loaded
+      if (availableModels.length === 0) {
+        setMessage('❌ Please load available models first by clicking "Load Available Models".');
         setSaving(false);
         return;
       }
@@ -139,7 +152,7 @@ export default function SettingsPage() {
       console.log('Save response:', { keyData, modelData });
 
       if (keyData.success && modelData.success) {
-        setMessage('✅ Settings saved successfully!');
+        setMessage('✅ Settings saved successfully to MySQL database!');
         setTimeout(() => setMessage(''), 3000);
       } else {
         const errorMsg = keyData.error || keyData.details || modelData.error || modelData.details || 'Unknown error';
@@ -265,21 +278,14 @@ export default function SettingsPage() {
                 ))}
               </select>
             ) : (
-              <select
-                value={selectedModel}
-                onChange={(e) => setSelectedModel(e.target.value)}
-                className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-background"
-              >
-                <option value="gemini-2.5-flash">Gemini 2.5 Flash (Recommended)</option>
-                <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
-                <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
-                <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash Lite</option>
-              </select>
+              <div className="w-full px-4 py-2 border border-border rounded-lg bg-muted text-muted-foreground">
+                Please load available models first
+              </div>
             )}
             <p className="mt-2 text-sm text-muted-foreground">
               {availableModels.length > 0 
                 ? `${availableModels.length} models available. Select one for AI operations.`
-                : 'Click "Load Available Models" to see all available models for your API key.'
+                : 'Enter your API key above and click "Load Available Models" to see available models.'
               }
             </p>
           </div>
@@ -288,7 +294,7 @@ export default function SettingsPage() {
           <div className="flex gap-3">
             <AnimatedButton
               onClick={handleSave}
-              disabled={saving || !geminiKey}
+              disabled={saving || !geminiKey || availableModels.length === 0}
               hoverScale={1.05}
             >
               {saving ? 'Saving...' : 'Save Settings'}
@@ -296,7 +302,7 @@ export default function SettingsPage() {
 
             <AnimatedButton
               onClick={testGeminiConnection}
-              disabled={!geminiKey}
+              disabled={!geminiKey || availableModels.length === 0}
               variant="outline"
               className="bg-green-600 hover:bg-green-700 text-white border-green-600"
               hoverScale={1.05}
