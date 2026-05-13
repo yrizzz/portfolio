@@ -1,0 +1,23 @@
+[
+  {
+    "id": "1",
+    "type": "Email",
+    "value": "arisedyhandoko@gmail.com",
+    "href": "mailto:arisedyhandoko@gmail.com",
+    "icon": "mail"
+  },
+  {
+    "id": "2",
+    "type": "Phone",
+    "value": "+6281296451923",
+    "href": "tel:+6281296451923",
+    "icon": "phone"
+  },
+  {
+    "id": "3",
+    "type": "Location",
+    "value": "Surakarta, Indonesia Soc",
+    "href": null,
+    "icon": "map-pin"
+  }
+]

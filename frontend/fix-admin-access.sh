@@ -1,0 +1,15 @@
+#!/bin/bash
+
+echo "🔄 Fixing Admin Access..."
+echo ""
+echo "Your role is already ADMIN in database, but JWT token needs refresh."
+echo ""
+echo "Quick Fix:"
+echo "1. Open browser"
+echo "2. Click 'Logout' button"
+echo "3. Click 'Login' again"
+echo "4. After login, you'll see 'Admin' button in header"
+echo ""
+echo "Or just close and reopen browser tab."
+echo ""
+echo "✅ Done! Try accessing /admin now"

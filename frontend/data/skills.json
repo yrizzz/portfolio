@@ -1,0 +1,98 @@
+[
+  {
+    "id": "2",
+    "name": "Next.js",
+    "slug": "nextdotjs",
+    "category": "Frontend"
+  },
+  {
+    "id": "3",
+    "name": "TypeScript",
+    "slug": "typescript",
+    "category": "Frontend"
+  },
+  {
+    "id": "4",
+    "name": "Tailwind",
+    "slug": "tailwindcss",
+    "category": "Frontend"
+  },
+  {
+    "id": "5",
+    "name": "Laravel",
+    "slug": "laravel",
+    "category": "Backend"
+  },
+  {
+    "id": "6",
+    "name": "Node.js",
+    "slug": "nodedotjs",
+    "category": "Backend"
+  },
+  {
+    "id": "7",
+    "name": "MySQL",
+    "slug": "mysql",
+    "category": "Database & ORM"
+  },
+  {
+    "id": "8",
+    "name": "PostgreSQL",
+    "slug": "postgresql",
+    "category": "Database & ORM"
+  },
+  {
+    "id": "9",
+    "name": "Git",
+    "slug": "git",
+    "category": "Tools"
+  },
+  {
+    "id": "10",
+    "name": "Docker",
+    "slug": "docker",
+    "category": "Tools"
+  },
+  {
+    "id": "1777779323045",
+    "name": "Bootrstrap",
+    "slug": "bootstrap",
+    "category": "Frontend"
+  },
+  {
+    "id": "1777779383581",
+    "name": "MongoDB",
+    "slug": "mongodb",
+    "category": "Database & ORM"
+  },
+  {
+    "id": "1777779402283",
+    "name": "PrismaOrm",
+    "slug": "prisma",
+    "category": "Database & ORM"
+  },
+  {
+    "id": "1777779420679",
+    "name": "Python",
+    "slug": "python",
+    "category": "Backend"
+  },
+  {
+    "id": "1777779463033",
+    "name": "Postman",
+    "slug": "Postman",
+    "category": "Tools"
+  },
+  {
+    "id": "1777779504488",
+    "name": "Go",
+    "slug": "go",
+    "category": "Backend"
+  },
+  {
+    "id": "1777779519282",
+    "name": "Burpsuite",
+    "slug": "burpsuite",
+    "category": "Tools"
+  }
+]

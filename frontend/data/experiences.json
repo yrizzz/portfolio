@@ -1,0 +1,24 @@
+{
+  "experiences": [
+    {
+      "id": "1",
+      "title": "Senior Full Stack Developer",
+      "company": "PT Tecma MItratama Advertindo",
+      "location": "Sukoharjo",
+      "startDate": "2022-02",
+      "endDate": null,
+      "current": true,
+      "description": "Leading development of scalable web ERP applications using Laravel,Php, and cloud infrastructure."
+    }
+  ],
+  "education": [
+    {
+      "id": "1",
+      "degree": "Bachelor of Computer informatics",
+      "institution": "STMIK Sinar Nusantara",
+      "location": "Surakarta, Indonesia",
+      "startDate": "2019-09",
+      "endDate": "2024-06"
+    }
+  ]
+}
