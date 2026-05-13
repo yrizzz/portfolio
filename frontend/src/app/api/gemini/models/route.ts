@@ -58,8 +58,14 @@ export async function GET(request: NextRequest) {
 
   } catch (error: any) {
     console.error('List models error:', error);
+    
+    // Return detailed error information
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to list models' },
+      { 
+        success: false, 
+        error: error.message || 'Failed to list models',
+        details: error.response?.data || error
+      },
       { status: 500 }
     );
   }

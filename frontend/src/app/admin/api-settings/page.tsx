@@ -59,6 +59,17 @@ export default function SettingsPage() {
     setMessage('Loading available models...');
     
     try {
+      // First save the API key so the backend can use it
+      await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          key: 'GEMINI_API_KEY',
+          value: geminiKey,
+        }),
+      });
+
+      // Then fetch models
       const response = await fetch('/api/gemini/models');
       const data = await response.json();
       
@@ -66,7 +77,8 @@ export default function SettingsPage() {
         setAvailableModels(data.models);
         setMessage(`✅ Found ${data.total} available models`);
       } else {
-        setMessage(`❌ Failed to load models: ${data.error}`);
+        const errorDetails = data.details ? JSON.stringify(data.details) : data.error;
+        setMessage(`❌ Failed to load models: ${errorDetails}`);
       }
     } catch (error: any) {
       setMessage(`❌ Error loading models: ${error.message}`);
