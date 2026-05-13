@@ -77,8 +77,22 @@ export default function SettingsPage() {
         setAvailableModels(data.models);
         setMessage(`✅ Found ${data.total} available models`);
       } else {
-        const errorDetails = data.details ? JSON.stringify(data.details) : data.error;
-        setMessage(`❌ Failed to load models: ${errorDetails}`);
+        // Extract detailed error message
+        let errorMsg = data.error || 'Unknown error';
+        
+        // Check for API key expired error
+        if (data.details?.error?.message) {
+          errorMsg = data.details.error.message;
+        } else if (data.fullError?.message) {
+          errorMsg = data.fullError.message;
+        }
+        
+        // Add helpful hint for common errors
+        if (errorMsg.includes('expired') || errorMsg.includes('invalid')) {
+          errorMsg += '\n\n💡 Tip: Please get a new API key from https://makersuite.google.com/app/apikey';
+        }
+        
+        setMessage(`❌ Failed to load models: ${errorMsg}`);
       }
     } catch (error: any) {
       setMessage(`❌ Error loading models: ${error.message}`);

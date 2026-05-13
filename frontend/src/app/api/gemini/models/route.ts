@@ -62,14 +62,36 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('List models error:', error);
     
+    // Extract detailed error information
+    let errorMessage = error.message || 'Failed to list models';
+    let errorDetails = null;
+    
+    // Check if it's an API error with response data
+    if (error.response?.data) {
+      errorDetails = error.response.data;
+      if (errorDetails.error?.message) {
+        errorMessage = errorDetails.error.message;
+      }
+    } else if (error.error) {
+      errorDetails = error.error;
+      if (error.error.message) {
+        errorMessage = error.error.message;
+      }
+    }
+    
     // Return detailed error information
     return NextResponse.json(
       { 
         success: false, 
-        error: error.message || 'Failed to list models',
-        details: error.response?.data || error
+        error: errorMessage,
+        details: errorDetails,
+        fullError: {
+          name: error.name,
+          message: error.message,
+          status: error.status
+        }
       },
-      { status: 500 }
+      { status: error.status || 500 }
     );
   }
 }
