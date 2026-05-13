@@ -33,6 +33,9 @@ node_modules/
 *.sqlite
 *.sqlite3
 dev.db
+**/dev.db
+**/dev.db-journal
+*.db-journal
 
 # ========================
 # Prisma generated
