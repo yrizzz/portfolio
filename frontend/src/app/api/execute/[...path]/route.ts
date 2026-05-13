@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { checkEndpointAuth } from '@/lib/api-auth';
+import { rateLimiter, generateRateLimitKey, getRateLimitHeaders } from '@/lib/rate-limiter';
+import { executeCode } from '@/lib/code-executor';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -69,8 +72,42 @@ async function handleDynamicAPI(
       );
     }
 
-    // Rate limiting check (simple implementation)
-    // TODO: Implement proper rate limiting with Redis or similar
+    // Check authentication if required
+    const authResult = await checkEndpointAuth(endpoint, req);
+    if (!authResult.authenticated) {
+      return NextResponse.json(
+        { error: authResult.error || 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    // Rate limiting check
+    const rateLimitIdentifier = authResult.apiKey?.id || 
+      req.headers.get('x-forwarded-for') || 
+      req.headers.get('x-real-ip') || 
+      'unknown';
+    
+    const rateLimitKey = generateRateLimitKey(rateLimitIdentifier, apiPath);
+    const rateLimitResult = rateLimiter.check(rateLimitKey, endpoint.rateLimit || 100, 60000);
+    
+    if (!rateLimitResult.allowed) {
+      const headers = getRateLimitHeaders(
+        endpoint.rateLimit || 100,
+        rateLimitResult.remaining,
+        rateLimitResult.resetTime
+      );
+      
+      return NextResponse.json(
+        { 
+          error: 'Rate limit exceeded',
+          message: `Too many requests. Please try again after ${new Date(rateLimitResult.resetTime).toISOString()}`
+        },
+        { 
+          status: 429,
+          headers 
+        }
+      );
+    }
 
     // Parse request parameters
     const { searchParams } = new URL(req.url);
@@ -93,81 +130,49 @@ async function handleDynamicAPI(
       ...bodyParams,
     };
 
-    // Execute the code in a sandboxed environment
-    try {
-      // Dynamic import of VM2
-      const { VM } = await import('vm2');
-      
-      const vm = new VM({
-        timeout: 30000, // 30 seconds timeout
-        sandbox: {
-          console: console,
-          require: require,
-          Buffer: Buffer,
-          setTimeout: setTimeout,
-          setInterval: setInterval,
-          clearTimeout: clearTimeout,
-          clearInterval: clearInterval,
-          params: requestParams, // Pass params through sandbox
-        },
-      });
+    // Execute the code based on language
+    const executionResult = await executeCode(
+      endpoint.language,
+      endpoint.code,
+      requestParams,
+      30000
+    );
 
-      // Wrap the code to make it executable
-      const wrappedCode = `
-        ${endpoint.code}
-        
-        // Execute the exported function
-        (async () => {
-          if (typeof exports.default === 'object' && exports.default.code) {
-            return await exports.default.code(params);
-          } else if (typeof exports.default === 'function') {
-            return await exports.default(params);
-          } else if (typeof code === 'function') {
-            return await code(params);
-          } else {
-            throw new Error('No executable function found in script');
-          }
-        })();
-      `;
+    // Log the request
+    await prisma.apiRequest.create({
+      data: {
+        endpoint: apiPath,
+        method: method,
+        statusCode: executionResult.success ? 200 : 500,
+        responseTime: executionResult.executionTime,
+        ipAddress: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown',
+        userAgent: req.headers.get('user-agent') || null,
+        apiKeyId: authResult.apiKey?.id || null,
+        userId: authResult.user?.id || null,
+      },
+    });
 
-      const result = await vm.run(wrappedCode);
+    // Add rate limit headers to response
+    const rateLimitHeaders = getRateLimitHeaders(
+      endpoint.rateLimit || 100,
+      rateLimitResult.remaining,
+      rateLimitResult.resetTime
+    );
 
-      // Log the request
-      await prisma.apiRequest.create({
-        data: {
-          endpoint: apiPath,
-          method: method,
-          statusCode: result?.code || 200,
-          responseTime: 0, // TODO: Calculate actual response time
-          ipAddress: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown',
-          userAgent: req.headers.get('user-agent') || null,
-        },
-      });
-
-      return NextResponse.json(result);
-
-    } catch (execError: any) {
-      console.error('Script execution error:', execError);
-      
-      await prisma.apiRequest.create({
-        data: {
-          endpoint: apiPath,
-          method: method,
-          statusCode: 500,
-          responseTime: 0,
-          ipAddress: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown',
-          userAgent: req.headers.get('user-agent') || null,
-        },
-      });
-
+    if (!executionResult.success) {
       return NextResponse.json(
         {
           error: 'Script execution failed',
-          details: execError.message,
+          details: executionResult.error,
         },
-        { status: 500 }
+        { 
+          status: 500,
+          headers: rateLimitHeaders 
+        }
       );
     }
+
+    return NextResponse.json(executionResult.output, { headers: rateLimitHeaders });
 
   } catch (error: any) {
     console.error('Dynamic API error:', error);
