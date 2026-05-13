@@ -79,7 +79,7 @@ Error: "API key expired. Please renew the API key."
 ### Quick Fix (5 minutes):
 
 1. **Get New API Key:**
-   - Visit: https://makersuite.google.com/app/apikey
+   - Visit: https://aistudio.google.com/apikey
    - Login with Google account
    - Click "Create API Key"
    - Copy the new key
@@ -158,7 +158,7 @@ npm install
 npx prisma generate
 
 # 3. Update Gemini API key (IMPORTANT!)
-# Get new key from: https://makersuite.google.com/app/apikey
+# Get new key from: https://aistudio.google.com/apikey
 # Then update via UI or .env file
 
 # 4. Start development server
@@ -201,7 +201,7 @@ npm run dev
 ## 🎯 NEXT STEPS
 
 ### Immediate (Required):
-1. ⚠️ **Get new Gemini API key** - https://makersuite.google.com/app/apikey
+1. ⚠️ **Get new Gemini API key** - https://aistudio.google.com/apikey
 2. Update API key in application
 3. Test all AI features
 
@@ -220,7 +220,7 @@ npm run dev
 - Test script: `frontend/test-gemini-key.js`
 
 ### Links:
-- **Get API Key:** https://makersuite.google.com/app/apikey
+- **Get API Key:** https://aistudio.google.com/apikey
 - **Gemini Docs:** https://ai.google.dev/gemini-api/docs
 - **Package Docs:** https://www.npmjs.com/package/@google/genai
 
@@ -239,7 +239,7 @@ npm run dev
 ### What's Needed:
 ⚠️ **New Gemini API Key** - Current key expired  
 ⏱️ **ETA:** 5 minutes to fix  
-🔗 **Get Key:** https://makersuite.google.com/app/apikey  
+🔗 **Get Key:** https://aistudio.google.com/apikey  
 
 ### Overall Status:
 🟢 **PRODUCTION READY** (after API key update)
@@ -257,7 +257,7 @@ npm run dev
 
 **TO FIX API KEY ISSUE:**
 
-1. Open: https://makersuite.google.com/app/apikey
+1. Open: https://aistudio.google.com/apikey
 2. Create new API key
 3. Update in: http://localhost:3000/admin/api-settings
 4. Test connection

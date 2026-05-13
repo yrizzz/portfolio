@@ -120,7 +120,7 @@ catch (error: any) {
 - Properly trimmed (no leading/trailing spaces)
 
 ### Get a Valid API Key:
-1. Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
+1. Visit [Google AI Studio](https://aistudio.google.com/apikey)
 2. Create a new API key
 3. Copy the entire key
 4. Paste into the settings page

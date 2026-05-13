@@ -11,7 +11,7 @@
 ## ✅ Solusi: Dapatkan API Key Baru
 
 ### Langkah 1: Buka Google AI Studio
-Kunjungi: **https://makersuite.google.com/app/apikey**
+Kunjungi: **https://aistudio.google.com/apikey**
 
 Atau alternatif: **https://aistudio.google.com/app/apikey**
 
@@ -161,7 +161,7 @@ curl "https://generativelanguage.googleapis.com/v1beta/models?key=YOUR_NEW_API_K
 
 ## 🔗 Useful Links
 
-- **Get API Key:** https://makersuite.google.com/app/apikey
+- **Get API Key:** https://aistudio.google.com/apikey
 - **AI Studio:** https://aistudio.google.com
 - **Documentation:** https://ai.google.dev/gemini-api/docs
 - **Pricing:** https://ai.google.dev/pricing
@@ -213,4 +213,4 @@ node test-gemini-key.js
 **Priority:** HIGH - Required for AI features  
 **ETA:** 5 minutes to get new key
 
-🔑 **Get your new API key here:** https://makersuite.google.com/app/apikey
+🔑 **Get your new API key here:** https://aistudio.google.com/apikey

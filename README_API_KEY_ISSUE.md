@@ -12,7 +12,7 @@ Your Gemini API key has **expired**. You'll see this error:
 ```
 ❌ Failed to load models: API key expired. Please renew the API key.
 
-💡 Tip: Please get a new API key from https://makersuite.google.com/app/apikey
+💡 Tip: Please get a new API key from https://aistudio.google.com/apikey
 ```
 
 ---
@@ -21,7 +21,7 @@ Your Gemini API key has **expired**. You'll see this error:
 
 ### Step 1: Get New API Key
 
-1. **Open:** https://makersuite.google.com/app/apikey
+1. **Open:** https://aistudio.google.com/apikey
 2. **Login** with your Google account
 3. **Click** "Create API Key" button
 4. **Copy** the new API key (starts with `AIza...`)
@@ -105,7 +105,7 @@ Available models: gemini-2.5-flash, gemini-2.5-pro, ...
 
 ## 🔗 Quick Links
 
-- **Get API Key:** https://makersuite.google.com/app/apikey
+- **Get API Key:** https://aistudio.google.com/apikey
 - **Gemini Docs:** https://ai.google.dev/gemini-api/docs
 - **Pricing:** https://ai.google.dev/pricing
 
@@ -135,7 +135,7 @@ Available models: gemini-2.5-flash, gemini-2.5-pro, ...
 **Impact:** Enables all AI-powered features
 
 🔑 **GET YOUR NEW API KEY NOW:**  
-👉 https://makersuite.google.com/app/apikey
+👉 https://aistudio.google.com/apikey
 
 ---
 

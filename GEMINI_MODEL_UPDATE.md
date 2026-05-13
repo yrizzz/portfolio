@@ -136,7 +136,7 @@ export default {
 - ✅ **Fixed**: Update sudah menggunakan gemini-2.0-flash-exp
 
 ### Error: "API key not valid"
-- Cek API key di [Google AI Studio](https://makersuite.google.com/app/apikey)
+- Cek API key di [Google AI Studio](https://aistudio.google.com/apikey)
 - Pastikan tidak ada spasi di awal/akhir
 - Generate API key baru jika perlu
 

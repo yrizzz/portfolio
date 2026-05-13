@@ -2,7 +2,7 @@
 
 ## Cara Mendapatkan API Key
 
-1. Buka [Google AI Studio](https://makersuite.google.com/app/apikey)
+1. Buka [Google AI Studio](https://aistudio.google.com/apikey)
 2. Login dengan akun Google Anda
 3. Klik "Get API Key" atau "Create API Key"
 4. Copy API key yang dihasilkan

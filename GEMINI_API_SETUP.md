@@ -76,7 +76,7 @@ const response = await fetch(
 
 ## Mendapatkan Gemini API Key
 
-1. Kunjungi [Google AI Studio](https://makersuite.google.com/app/apikey)
+1. Kunjungi [Google AI Studio](https://aistudio.google.com/apikey)
 2. Login dengan akun Google
 3. Klik "Create API Key"
 4. Copy API key yang dihasilkan
@@ -93,7 +93,7 @@ const response = await fetch(
 - Coba generate API key baru
 
 ### Error: "API quota exceeded"
-- Cek quota di [Google AI Studio](https://makersuite.google.com/app/apikey)
+- Cek quota di [Google AI Studio](https://aistudio.google.com/apikey)
 - Tunggu reset quota atau upgrade plan
 
 ### Test Connection Gagal tapi Submit Script Berhasil

@@ -234,7 +234,7 @@ npm install @google/genai
 
 ### Official Documentation:
 - **Gemini API Docs:** https://ai.google.dev/gemini-api/docs
-- **Get API Key:** https://makersuite.google.com/app/apikey
+- **Get API Key:** https://aistudio.google.com/apikey
 - **Model Reference:** https://ai.google.dev/gemini-api/docs/models/gemini
 
 ### Package Links:

@@ -89,7 +89,7 @@ export default function SettingsPage() {
         
         // Add helpful hint for common errors
         if (errorMsg.includes('expired') || errorMsg.includes('invalid')) {
-          errorMsg += '\n\n💡 Tip: Please get a new API key from https://makersuite.google.com/app/apikey';
+          errorMsg += '\n\n💡 Tip: Please get a new API key from https://aistudio.google.com/apikey';
         }
         
         setMessage(`❌ Failed to load models: ${errorMsg}`);
@@ -225,7 +225,7 @@ export default function SettingsPage() {
             <p className="mt-2 text-sm text-muted-foreground">
               Get your API key from{' '}
               <a
-                href="https://makersuite.google.com/app/apikey"
+                href="https://aistudio.google.com/apikey"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary hover:underline"

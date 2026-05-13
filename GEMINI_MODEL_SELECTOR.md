@@ -245,7 +245,7 @@ const model = genAI.getGenerativeModel({ model: modelName });
 ## Support
 
 Untuk informasi lebih lanjut:
-- [Google AI Studio](https://makersuite.google.com/app/apikey)
+- [Google AI Studio](https://aistudio.google.com/apikey)
 - [Gemini API Docs](https://ai.google.dev/docs)
 - [Model List](https://ai.google.dev/models/gemini)
 
