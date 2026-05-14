@@ -836,27 +836,54 @@ export default function EditAPIPage({ params }: { params: Promise<{ id: string }
             <div className="p-3 bg-muted/50 rounded-lg border-2 border-border">
               <p className="text-xs font-semibold mb-2">📌 Correct Format:</p>
               <p className="text-xs text-muted-foreground mb-2">
-                Paste <strong>ONLY the function code</strong>, not the full object:
+                Paste <strong>ONLY the function code</strong>. Both ES6 and CommonJS syntax are supported:
               </p>
-              <pre className="text-xs bg-background p-3 rounded border overflow-x-auto">
+              
+              <div className="space-y-3">
+                {/* CommonJS Example */}
+                <div>
+                  <p className="text-xs font-semibold mb-1 text-muted-foreground">✅ CommonJS (Recommended):</p>
+                  <pre className="text-xs bg-background p-3 rounded border overflow-x-auto">
 {`module.exports = async (params) => {
+    const axios = require("axios");
     const { phone } = params;
     
-    // Your logic here
-    const result = await someApiCall(phone);
+    const result = await axios.get(\`https://api.example.com/check?phone=\${phone}\`);
     
     return {
         code: 200,
         status: true,
-        data: result
+        data: result.data
     };
 };`}</pre>
+                </div>
+
+                {/* ES6 Example */}
+                <div>
+                  <p className="text-xs font-semibold mb-1 text-muted-foreground">✅ ES6 (Auto-converted):</p>
+                  <pre className="text-xs bg-background p-3 rounded border overflow-x-auto">
+{`import axios from "axios";
+
+export default async (params) => {
+    const { phone } = params;
+    
+    const result = await axios.get(\`https://api.example.com/check?phone=\${phone}\`);
+    
+    return {
+        code: 200,
+        status: true,
+        data: result.data
+    };
+};`}</pre>
+                </div>
+              </div>
+
               <div className="mt-2 pt-2 border-t border-border">
-                <p className="text-xs font-semibold mb-1 text-muted-foreground">✅ Valid formats:</p>
+                <p className="text-xs font-semibold mb-1 text-muted-foreground">✅ Valid export formats:</p>
                 <ul className="text-xs text-muted-foreground space-y-0.5 list-disc list-inside">
                   <li><code className="bg-muted px-1 rounded">module.exports = async (params) =&gt; &#123;...&#125;</code></li>
                   <li><code className="bg-muted px-1 rounded">exports.default = async (params) =&gt; &#123;...&#125;</code></li>
-                  <li><code className="bg-muted px-1 rounded">module.exports.default = async (params) =&gt; &#123;...&#125;</code></li>
+                  <li><code className="bg-muted px-1 rounded">export default async (params) =&gt; &#123;...&#125;</code> (ES6)</li>
                 </ul>
               </div>
             </div>

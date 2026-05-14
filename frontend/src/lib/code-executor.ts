@@ -46,6 +46,45 @@ const ALLOWED_MODULES = [
 ];
 
 /**
+ * Convert ES6 import statements to CommonJS require
+ */
+function convertImportsToRequire(code: string): string {
+  let converted = code;
+
+  // Convert: import axios from "axios" -> const axios = require("axios")
+  converted = converted.replace(
+    /import\s+(\w+)\s+from\s+['"]([^'"]+)['"]\s*;?/g,
+    'const $1 = require("$2");'
+  );
+
+  // Convert: import { x, y } from "module" -> const { x, y } = require("module")
+  converted = converted.replace(
+    /import\s+\{([^}]+)\}\s+from\s+['"]([^'"]+)['"]\s*;?/g,
+    'const {$1} = require("$2");'
+  );
+
+  // Convert: import * as name from "module" -> const name = require("module")
+  converted = converted.replace(
+    /import\s+\*\s+as\s+(\w+)\s+from\s+['"]([^'"]+)['"]\s*;?/g,
+    'const $1 = require("$2");'
+  );
+
+  // Convert: export default -> module.exports =
+  converted = converted.replace(
+    /export\s+default\s+/g,
+    'module.exports = '
+  );
+
+  // Convert: export const/function -> module.exports.name =
+  converted = converted.replace(
+    /export\s+(const|let|var|function|class)\s+(\w+)/g,
+    '$1 $2; module.exports.$2 = $2'
+  );
+
+  return converted;
+}
+
+/**
  * Validate code for security issues
  */
 function validateCode(code: string): { safe: boolean; reason?: string } {
@@ -58,6 +97,15 @@ function validateCode(code: string): { safe: boolean; reason?: string } {
   // Check require statements against whitelist
   const requireMatches = code.matchAll(/require\s*\(\s*['"]([^'"]+)['"]\s*\)/g);
   for (const match of requireMatches) {
+    const moduleName = match[1];
+    if (!moduleName.startsWith('.') && !ALLOWED_MODULES.includes(moduleName)) {
+      return { safe: false, reason: `Module "${moduleName}" is not allowed. Allowed: ${ALLOWED_MODULES.join(', ')}` };
+    }
+  }
+
+  // Check import statements against whitelist (before conversion)
+  const importMatches = code.matchAll(/import\s+.+\s+from\s+['"]([^'"]+)['"]/g);
+  for (const match of importMatches) {
     const moduleName = match[1];
     if (!moduleName.startsWith('.') && !ALLOWED_MODULES.includes(moduleName)) {
       return { safe: false, reason: `Module "${moduleName}" is not allowed. Allowed: ${ALLOWED_MODULES.join(', ')}` };
@@ -77,7 +125,7 @@ export async function executeNodeJS(code: string, params: any, timeout: number =
   const tempFile = join(tempDir, `script_${tempId}.cjs`);
 
   try {
-    // Security validation
+    // Security validation (before conversion)
     const validation = validateCode(code);
     if (!validation.safe) {
       return {
@@ -87,13 +135,16 @@ export async function executeNodeJS(code: string, params: any, timeout: number =
       };
     }
 
+    // Convert ES6 imports to CommonJS requires
+    const convertedCode = convertImportsToRequire(code);
+
     await mkdir(tempDir, { recursive: true });
 
     const paramsJson = JSON.stringify(params);
     const nodeCode = `
 const params = JSON.parse(${JSON.stringify(paramsJson)});
 
-${code}
+${convertedCode}
 
 // Execute the exported function
 (async () => {
