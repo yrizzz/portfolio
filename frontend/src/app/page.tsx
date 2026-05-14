@@ -20,16 +20,16 @@ export default function Home() {
             <div id="home">
               <HeroSection />
             </div>
-            <div id="projects" className="pt-12 md:pt-16 lg:pt-20">
+            <div id="projects" className="pt-8 md:pt-10 lg:pt-10" data-aos="fade-up">
               <ProjectsSection />
             </div>
-            <div id="about">
+            <div id="about" data-aos="fade-up">
               <AboutSection />
             </div>
-            <div id="experience">
+            <div id="experience" data-aos="fade-up">
               <ExperienceSection />
             </div>
-            <div id="contact">
+            <div id="contact" data-aos="fade-up">
               <ContactSection />
             </div>
           </div>

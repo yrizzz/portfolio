@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { AnimatedButton, AnimatedIconButton } from "@/components/ui/animated-button";
-import { Save, RefreshCw, Plus, Trash2, Edit, Briefcase, GraduationCap } from "lucide-react";
+import { Save, RefreshCw, Plus, Trash2, Edit, Briefcase, GraduationCap, MapPin, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { Modal } from "@/components/admin/modal";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -298,7 +298,7 @@ export default function ExperiencePage() {
                       </div>
                       <p className="text-sm font-medium text-muted-foreground">{exp.company}</p>
                       <p className="text-sm text-muted-foreground">
-                        📍 {exp.location} • 📅 {formatDate(exp.startDate)} - {exp.current ? "Present" : formatDate(exp.endDate || "")}
+                        <MapPin className="h-3 w-3 inline mr-1" />{exp.location} • <Calendar className="h-3 w-3 inline mr-1" />{formatDate(exp.startDate)} - {exp.current ? "Present" : formatDate(exp.endDate || "")}
                       </p>
                       <p className="text-sm text-muted-foreground mt-2">{exp.description}</p>
                     </div>
@@ -350,7 +350,7 @@ export default function ExperiencePage() {
                       <h4 className="text-lg font-semibold">{edu.degree}</h4>
                       <p className="text-sm font-medium text-muted-foreground">{edu.institution}</p>
                       <p className="text-sm text-muted-foreground">
-                        📍 {edu.location} • 📅 {formatDate(edu.startDate)} - {formatDate(edu.endDate)}
+                        <MapPin className="h-3 w-3 inline mr-1" />{edu.location} • <Calendar className="h-3 w-3 inline mr-1" />{formatDate(edu.startDate)} - {formatDate(edu.endDate)}
                       </p>
                     </div>
                     <div className="flex gap-2">

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { GlowCard } from '@/components/ui/glow-card';
+import { toast } from 'sonner';
 
 interface ApiKey {
   id: string;
@@ -54,7 +55,7 @@ export default function ApiKeysPage() {
 
   const createApiKey = async () => {
     if (!newKeyName.trim()) {
-      alert('Please enter a name for the API key');
+      toast.error('Please enter a name for the API key');
       return;
     }
 
@@ -74,11 +75,11 @@ export default function ApiKeysPage() {
         setNewKeyName('');
         fetchApiKeys();
       } else {
-        alert(data.error || 'Failed to create API key');
+        toast.error(data.error || 'Failed to create API key');
       }
     } catch (error) {
       console.error('Error creating API key:', error);
-      alert('Failed to create API key');
+      toast.error('Failed to create API key');
     } finally {
       setCreating(false);
     }
@@ -97,11 +98,11 @@ export default function ApiKeysPage() {
       if (response.ok) {
         fetchApiKeys();
       } else {
-        alert(data.error || 'Failed to toggle API key');
+        toast.error(data.error || 'Failed to toggle API key');
       }
     } catch (error) {
       console.error('Error toggling API key:', error);
-      alert('Failed to toggle API key');
+      toast.error('Failed to toggle API key');
     }
   };
 
@@ -120,17 +121,17 @@ export default function ApiKeysPage() {
       if (response.ok) {
         fetchApiKeys();
       } else {
-        alert(data.error || 'Failed to delete API key');
+        toast.error(data.error || 'Failed to delete API key');
       }
     } catch (error) {
       console.error('Error deleting API key:', error);
-      alert('Failed to delete API key');
+      toast.error('Failed to delete API key');
     }
   };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    alert('Copied to clipboard!');
+    toast.success('Copied to clipboard!');
   };
 
   const maskApiKey = (key: string) => {
@@ -149,7 +150,7 @@ export default function ApiKeysPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 p-4 sm:p-6 lg:p-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -194,7 +195,7 @@ export default function ApiKeysPage() {
         {/* Create New Key */}
         <GlowCard className="p-6 mb-6">
           <h2 className="text-xl font-bold text-white mb-4">Create New API Key</h2>
-          <div className="flex gap-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <input
               type="text"
               value={newKeyName}
@@ -206,7 +207,7 @@ export default function ApiKeysPage() {
             <button
               onClick={createApiKey}
               disabled={creating || !newKeyName.trim()}
-              className="px-6 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-medium"
+              className="px-6 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-medium whitespace-nowrap"
             >
               {creating ? 'Creating...' : 'Create Key'}
             </button>
@@ -221,11 +222,11 @@ export default function ApiKeysPage() {
             </GlowCard>
           ) : (
             apiKeys.map((key) => (
-              <GlowCard key={key.id} className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-xl font-bold text-white">{key.name}</h3>
+              <GlowCard key={key.id} className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-2 flex-wrap">
+                      <h3 className="text-lg sm:text-xl font-bold text-white">{key.name}</h3>
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-medium ${
                           key.isActive
@@ -237,17 +238,17 @@ export default function ApiKeysPage() {
                       </span>
                     </div>
                     
-                    <div className="bg-gray-800 rounded-lg p-3 mb-3 flex items-center justify-between">
-                      <code className="text-gray-400 text-sm">{maskApiKey(key.key)}</code>
+                    <div className="bg-gray-800 rounded-lg p-3 mb-3 flex items-center justify-between gap-2">
+                      <code className="text-gray-400 text-xs sm:text-sm truncate">{maskApiKey(key.key)}</code>
                       <button
                         onClick={() => copyToClipboard(key.key)}
-                        className="ml-4 px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded text-xs"
+                        className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded text-xs shrink-0"
                       >
                         Copy
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 text-sm">
                       <div>
                         <p className="text-gray-500">Created</p>
                         <p className="text-white">{new Date(key.createdAt).toLocaleDateString()}</p>
@@ -265,10 +266,10 @@ export default function ApiKeysPage() {
                     </div>
                   </div>
 
-                  <div className="flex gap-2 ml-4">
+                  <div className="flex gap-2 sm:ml-4 shrink-0">
                     <button
                       onClick={() => toggleApiKey(key.id, key.isActive)}
-                      className={`px-4 py-2 rounded-lg font-medium ${
+                      className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg font-medium text-sm ${
                         key.isActive
                           ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
                           : 'bg-green-600 hover:bg-green-700 text-white'
@@ -278,7 +279,7 @@ export default function ApiKeysPage() {
                     </button>
                     <button
                       onClick={() => deleteApiKey(key.id, key.name)}
-                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium"
+                      className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium text-sm"
                     >
                       Delete
                     </button>

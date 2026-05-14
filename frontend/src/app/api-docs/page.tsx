@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { GlowCard } from '@/components/ui/glow-card';
 import Link from 'next/link';
+import { toast } from 'sonner';
 
 interface ApiEndpoint {
   id: string;
@@ -129,7 +130,7 @@ export default function ApiDocsPage() {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    alert('Copied to clipboard!');
+    toast.success('Copied to clipboard!');
   };
 
   if (loading) {

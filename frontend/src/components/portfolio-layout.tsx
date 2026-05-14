@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Home, Briefcase, User, Mail, FolderGit2, Activity, MessageSquare, Moon, Sun, ArrowUpRight, LogIn, LogOut } from "lucide-react";
+import { LayoutGrid, Layers, UserCircle, Send, FolderKanban, Zap, BookOpen, Moon, Sun, ExternalLink, LogIn, LogOut } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useRouter, usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
@@ -22,21 +22,22 @@ import {
 } from "@/components/ui/sidebar";
 import { AnimatedIconButton } from "@/components/ui/animated-button";
 import { ParallaxBackground } from "@/components/parallax-background";
+import { SpaceBackground } from "@/components/space-background";
 import { Footer } from "@/components/footer";
 import { ScrollToTop } from "@/components/scroll-to-top";
 import { LoginModal } from "@/components/login-modal";
 
 const mainNav = [
-  { title: "Home", icon: Home, href: "/#home" },
-  { title: "Projects", icon: FolderGit2, href: "/#projects" },
-  { title: "Skills", icon: User, href: "/#about" },
-  { title: "Experience", icon: Briefcase, href: "/#experience" },
-  { title: "Contact", icon: Mail, href: "/#contact" },
+  { title: "Home", icon: LayoutGrid, href: "/#home" },
+  { title: "Projects", icon: FolderKanban, href: "/#projects" },
+  { title: "Skills", icon: Layers, href: "/#about" },
+  { title: "Experience", icon: Zap, href: "/#experience" },
+  { title: "Contact", icon: Send, href: "/#contact" },
 ];
 
 const pageNav = [
-  { title: "Activity", icon: Activity, href: "/activity" },
-  { title: "Guestbook", icon: MessageSquare, href: "/guestbook" },
+  { title: "Activity", icon: Zap, href: "/activity" },
+  { title: "Guestbook", icon: BookOpen, href: "/guestbook" },
 ];
 
 export function AppSidebar() {
@@ -91,26 +92,30 @@ export function AppSidebar() {
       const targetId = href.substring(1);
       
       if (pathname === "/") {
-        const element = document.querySelector(targetId);
-        if (element) {
-          const headerOffset = 80;
-          const elementPosition = element.getBoundingClientRect().top;
-          const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-          
-          window.scrollTo({
-            top: offsetPosition,
-            behavior: "smooth"
-          });
-          setActiveSection(href);
-        }
+        setOpenMobile(false);
+        setTimeout(() => {
+          const element = document.querySelector(targetId);
+          if (element) {
+            const headerOffset = 70;
+            const elementPosition = element.getBoundingClientRect().top;
+            const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+            
+            window.scrollTo({
+              top: offsetPosition,
+              behavior: "smooth"
+            });
+          }
+        }, 350);
+        setActiveSection(href);
       } else {
         router.push(href);
+        setOpenMobile(false);
       }
     } else {
       router.push(href);
       setActiveSection(href);
+      setOpenMobile(false);
     }
-    setOpenMobile(false);
   };
 
   return (
@@ -195,7 +200,7 @@ export function AppSidebar() {
                     >
                       <item.icon className={`h-4 w-4 ${isActive ? "text-[#136bfe]" : ""}`} />
                       <span>{item.title}</span>
-                      <ArrowUpRight className="ml-auto h-3 w-3 opacity-40" />
+                      <ExternalLink className="ml-auto h-3 w-3 opacity-40" />
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
@@ -261,10 +266,11 @@ export function PortfolioLayout({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
         <ParallaxBackground />
+        <SpaceBackground />
         <AppSidebar />
-        <main className="flex-1 flex flex-col">
+        <main className="flex-1 flex flex-col min-w-0">
           {/* Header */}
-          <div className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/50">
+          <div className="sticky top-0 z-50 border-b border-gray-200/60 dark:border-white/10 bg-white/80 dark:bg-background/30 backdrop-blur-xl supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-background/20">
             <div className="flex h-14 items-center justify-between px-4">
               <div className="flex items-center gap-4">
                 <SidebarTrigger />
@@ -322,7 +328,7 @@ export function PortfolioLayout({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Page content */}
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1">
             {children}
           </div>
 

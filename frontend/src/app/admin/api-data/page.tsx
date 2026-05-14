@@ -7,6 +7,7 @@ import { Play, Edit, Trash2, X, Code2, Globe, Clock, CheckCircle2, XCircle, Aler
 import { Badge } from '@/components/ui/badge';
 import { GlowCard } from '@/components/ui/glow-card';
 import { AnimatedButton, AnimatedIconButton } from '@/components/ui/animated-button';
+import { toast } from 'sonner';
 
 export default function APIsPage() {
   const [apis, setApis] = useState<any[]>([]);
@@ -24,6 +25,12 @@ export default function APIsPage() {
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<any>(null);
   const [testParams, setTestParams] = useState<Record<string, any>>({});
+  const [testFiles, setTestFiles] = useState<Record<string, File>>({});
+  const [fileParamKeys, setFileParamKeys] = useState<string[]>([]);
+  const [sandboxTab, setSandboxTab] = useState<'code' | 'params'>('params');
+  const [newParamKey, setNewParamKey] = useState('');
+  const [newParamValue, setNewParamValue] = useState('');
+  const [newParamType, setNewParamType] = useState<'text' | 'file'>('text');
 
   useEffect(() => {
     fetchAPIs();
@@ -59,13 +66,13 @@ export default function APIsPage() {
       });
 
       if (response.ok) {
-        alert('API deleted successfully');
+        toast.success('API deleted successfully');
         fetchAPIs();
       } else {
-        alert('Failed to delete API');
+        toast.error('Failed to delete API');
       }
     } catch (error) {
-      alert('Error deleting API');
+      toast.error('Error deleting API');
     }
   };
 
@@ -81,7 +88,7 @@ export default function APIsPage() {
         fetchAPIs();
       }
     } catch (error) {
-      alert('Error updating API');
+      toast.error('Error updating API');
     }
   };
 
@@ -89,20 +96,29 @@ export default function APIsPage() {
     setTestingApi(api);
     setTestModal(true);
     setTestResult(null);
+    setTestFiles({});
     
     // Initialize params from API definition
     const initialParams: Record<string, any> = {};
+    const detectedFileKeys: string[] = [];
     if (api.params) {
       try {
-        const params = typeof api.params === 'string' ? JSON.parse(api.params) : api.params;
-        params.forEach((param: any) => {
-          initialParams[param.name] = param.default || '';
-        });
+        const paramsList = typeof api.params === 'string' ? JSON.parse(api.params) : api.params;
+        if (Array.isArray(paramsList)) {
+          paramsList.forEach((param: any) => {
+            if (param.type === 'file') {
+              detectedFileKeys.push(param.name);
+            } else {
+              initialParams[param.name] = param.default || '';
+            }
+          });
+        }
       } catch (e) {
         console.error('Failed to parse params:', e);
       }
     }
     setTestParams(initialParams);
+    setFileParamKeys(detectedFileKeys);
   };
 
   const handleTestCode = async () => {
@@ -112,15 +128,36 @@ export default function APIsPage() {
     setTestResult(null);
 
     try {
-      const response = await fetch('/api/sandbox', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          code: testingApi.rawScript || testingApi.code,
-          language: testingApi.language,
-          testData: testParams // Send user-provided params
-        }),
-      });
+      const hasFiles = Object.keys(testFiles).length > 0;
+      let response;
+
+      if (hasFiles) {
+        // Use FormData for file uploads
+        const formData = new FormData();
+        formData.append('code', testingApi.code || testingApi.rawScript);
+        formData.append('language', testingApi.language);
+        formData.append('testData', JSON.stringify(testParams));
+        
+        // Append files
+        Object.entries(testFiles).forEach(([key, file]) => {
+          formData.append(key, file);
+        });
+
+        response = await fetch('/api/sandbox', {
+          method: 'POST',
+          body: formData,
+        });
+      } else {
+        response = await fetch('/api/sandbox', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            code: testingApi.code || testingApi.rawScript,
+            language: testingApi.language,
+            testData: testParams,
+          }),
+        });
+      }
 
       const data = await response.json();
       setTestResult(data);
@@ -139,6 +176,12 @@ export default function APIsPage() {
     setTestingApi(null);
     setTestResult(null);
     setTestParams({});
+    setTestFiles({});
+    setFileParamKeys([]);
+    setSandboxTab('params');
+    setNewParamKey('');
+    setNewParamValue('');
+    setNewParamType('text');
   };
 
   return (
@@ -162,7 +205,7 @@ export default function APIsPage() {
 
       {/* Filters */}
       <GlowCard className="p-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           <select
             value={filter.status}
             onChange={(e) => setFilter({ ...filter, status: e.target.value })}
@@ -211,7 +254,7 @@ export default function APIsPage() {
       </GlowCard>
 
       {/* APIs List */}
-      <GlowCard className="p-6">
+      <GlowCard className="p-4 sm:p-6">
         {loading ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">Loading APIs...</p>
@@ -230,13 +273,13 @@ export default function APIsPage() {
             {apis.map((api) => (
               <div
                 key={api.id}
-                className="group relative bg-background/50 backdrop-blur-sm border-2 border-border/50 rounded-xl p-5 hover:border-primary/50 transition-all duration-300 hover:shadow-lg"
+                className="group relative bg-background/50 backdrop-blur-sm border-2 border-border/50 rounded-xl p-4 sm:p-5 hover:border-primary/50 transition-all duration-300 hover:shadow-lg"
               >
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
                   {/* Left Section - Main Info */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-3">
-                      <h3 className="text-lg font-semibold truncate">{api.name}</h3>
+                    <div className="flex items-center gap-2 sm:gap-3 mb-3 flex-wrap">
+                      <h3 className="text-base sm:text-lg font-semibold truncate">{api.name}</h3>
                       <Badge 
                         variant={
                           api.status === 'approved' ? 'default' :
@@ -299,7 +342,7 @@ export default function APIsPage() {
                   </div>
 
                   {/* Right Section - Actions */}
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0 flex-wrap">
                     <AnimatedIconButton
                       variant="outline"
                       size="icon"
@@ -348,243 +391,339 @@ export default function APIsPage() {
         )}
       </GlowCard>
 
-      {/* Test Sandbox Modal - Custom Tailwind Modal */}
+      {/* Test Sandbox Modal - Postman Style */}
       {testModal && testingApi && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="relative bg-background rounded-xl shadow-2xl w-[96vw] max-w-[1800px] h-[94vh] flex flex-col border border-border">
-            {/* Header */}
-            <div className="flex items-start justify-between p-6 border-b">
-              <div className="flex-1">
-                <h2 className="text-2xl font-bold flex items-center gap-3">
-                  <span className="text-4xl">🧪</span>
-                  Test API Sandbox
-                </h2>
-                <p className="text-muted-foreground mt-2 text-base">
-                  {testingApi.name} - <code className="text-sm bg-muted px-2 py-1 rounded">{testingApi.path}</code>
-                </p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeTestModal} />
+          <div 
+            className="relative bg-background rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col border border-border/50 overflow-hidden z-10"
+          >
+            {/* Header - Compact */}
+            <div className="flex items-center justify-between px-5 py-3 border-b border-border/50 bg-muted/20">
+              <div className="flex items-center gap-3">
+                <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Play className="h-3.5 w-3.5 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-semibold">{testingApi.name}</h2>
+                  <span className="text-[11px] text-muted-foreground">{testingApi.language}</span>
+                </div>
               </div>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={closeTestModal}
-                className="shrink-0"
+                className="h-7 w-7 rounded-lg hover:bg-muted"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4" />
               </Button>
             </div>
 
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              {/* API Info */}
-              <div className="bg-muted/50 rounded-lg p-6 border">
-                <div className="grid grid-cols-3 gap-6">
-                  <div>
-                    <span className="text-sm text-muted-foreground block mb-2">Method</span>
-                    <span className={`inline-block px-4 py-2 rounded-md text-base font-semibold ${
-                      testingApi.method === 'GET' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
-                      testingApi.method === 'POST' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' :
-                      testingApi.method === 'PUT' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                      'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                    }`}>
-                      {testingApi.method}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-sm text-muted-foreground block mb-2">Language</span>
-                    <span className="font-mono text-lg font-semibold">{testingApi.language}</span>
-                  </div>
-                  <div>
-                    <span className="text-sm text-muted-foreground block mb-2">Status</span>
-                    <span className={`inline-block px-4 py-2 rounded-md text-base font-semibold ${
-                      testingApi.status === 'approved' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
-                      testingApi.status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                      'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                    }`}>
-                      {testingApi.status}
-                    </span>
-                  </div>
-                </div>
+            {/* URL Bar - Method + Path + Run */}
+            <div className="flex items-center gap-2 px-5 py-3 border-b border-border/50 bg-muted/10">
+              <Badge 
+                variant="outline" 
+                className={`font-mono text-xs font-bold shrink-0 ${
+                  testingApi.method === 'GET' ? 'border-green-500/50 text-green-600 dark:text-green-400 bg-green-500/5' :
+                  testingApi.method === 'POST' ? 'border-blue-500/50 text-blue-600 dark:text-blue-400 bg-blue-500/5' :
+                  testingApi.method === 'PUT' ? 'border-yellow-500/50 text-yellow-600 dark:text-yellow-400 bg-yellow-500/5' :
+                  'border-red-500/50 text-red-600 dark:text-red-400 bg-red-500/5'
+                }`}
+              >
+                {testingApi.method}
+              </Badge>
+              <div className="flex-1 px-3 py-1.5 bg-muted/30 rounded-lg border border-border/50">
+                <code className="text-xs font-mono text-muted-foreground">/api/execute{testingApi.path}</code>
               </div>
-
-              {/* Code & Params Grid */}
-              <div className="grid grid-cols-2 gap-6">
-                {/* Code Preview */}
-                <div>
-                  <h4 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                    <span>📝</span> Source Code
-                  </h4>
-                  <pre className="bg-slate-950 text-slate-100 p-4 rounded-lg overflow-auto text-sm font-mono h-[45vh] border border-slate-800 leading-relaxed">
-                    {testingApi.rawScript || testingApi.code || 'No code available'}
-                  </pre>
-                </div>
-
-                {/* Test Parameters */}
-                <div>
-                  <h4 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                    <span>⚙️</span> Test Parameters
-                  </h4>
-                  <div className="space-y-3 bg-muted/30 p-4 rounded-lg border h-[45vh] overflow-auto">
-                    {Object.keys(testParams).length > 0 ? (
-                      Object.entries(testParams).map(([key, value]) => (
-                        <div key={key}>
-                          <label className="block text-sm font-medium mb-1">
-                            {key}
-                          </label>
-                          <input
-                            type="text"
-                            value={value as string}
-                            onChange={(e) => setTestParams({ ...testParams, [key]: e.target.value })}
-                            className="w-full px-3 py-2 border rounded-md bg-background"
-                            placeholder={`Enter ${key}`}
-                          />
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-sm text-muted-foreground text-center py-8">
-                        No parameters defined for this API
-                      </div>
-                    )}
-                    
-                    <div className="pt-4 border-t">
-                      <label className="block text-sm font-medium mb-1">
-                        Add Custom Parameter
-                      </label>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          placeholder="Key"
-                          id="customKey"
-                          className="flex-1 px-3 py-2 border rounded-md bg-background text-sm"
-                        />
-                        <input
-                          type="text"
-                          placeholder="Value"
-                          id="customValue"
-                          className="flex-1 px-3 py-2 border rounded-md bg-background text-sm"
-                        />
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            const keyInput = document.getElementById('customKey') as HTMLInputElement;
-                            const valueInput = document.getElementById('customValue') as HTMLInputElement;
-                            if (keyInput.value) {
-                              setTestParams({ ...testParams, [keyInput.value]: valueInput.value });
-                              keyInput.value = '';
-                              valueInput.value = '';
-                            }
-                          }}
-                        >
-                          Add
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Test Button */}
               <Button
                 onClick={handleTestCode}
                 disabled={testing}
-                className="w-full h-12 text-base font-semibold"
-                size="lg"
+                size="sm"
+                className="text-xs gap-1.5 px-4 shrink-0"
               >
                 {testing ? (
                   <>
-                    <span className="animate-spin mr-2">⏳</span>
-                    Testing...
+                    <span className="h-3.5 w-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    Running
                   </>
                 ) : (
                   <>
-                    <span className="mr-2">▶️</span>
-                    Run Test
+                    <Play className="h-3.5 w-3.5" />
+                    Send
                   </>
                 )}
               </Button>
+            </div>
 
-              {/* Test Result */}
-              {testResult && (
-                <div className={`p-6 rounded-lg border-2 ${
-                  testResult.success 
-                    ? 'bg-green-50 border-green-300 dark:bg-green-950/30 dark:border-green-700' 
-                    : 'bg-red-50 border-red-300 dark:bg-red-950/30 dark:border-red-700'
-                }`}>
-                  <div className="flex items-start gap-4">
-                    <span className="text-4xl">{testResult.success ? '✅' : '❌'}</span>
-                    <div className="flex-1 min-w-0 space-y-3">
-                      <h4 className="font-bold text-lg flex items-center gap-2">
-                        {testResult.success ? (
-                          <span className="text-green-600 dark:text-green-400">Test Passed</span>
-                        ) : (
-                          <span className="text-red-600 dark:text-red-400">Test Failed</span>
-                        )}
-                      </h4>
-
-                      {/* Error Details */}
-                      {!testResult.success && testResult.result?.error && (
-                        <div className="space-y-2">
-                          <div className="bg-red-100 dark:bg-red-900/20 p-3 rounded border border-red-200 dark:border-red-800">
-                            <p className="text-sm font-semibold text-red-800 dark:text-red-300">Error:</p>
-                            <p className="text-sm text-red-700 dark:text-red-400 font-mono mt-1">
-                              {testResult.result.error}
-                            </p>
+            {/* Content - Scrollable */}
+            <div className="flex-1 overflow-auto min-h-0">
+              {/* Parameters Section */}
+              <div className="px-5 py-4 border-b border-border/30">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Parameters</h3>
+                  <span className="text-[10px] text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">
+                    {Object.keys(testParams).length + Object.keys(testFiles).length} params
+                  </span>
+                </div>
+                
+                {(Object.keys(testParams).length > 0 || Object.keys(testFiles).length > 0 || fileParamKeys.length > 0) ? (
+                  <div className="space-y-2">
+                    {/* Text params */}
+                    {Object.entries(testParams).map(([key, value]) => (
+                      <div key={key} className="flex items-center gap-2">
+                        <div className="w-28 shrink-0">
+                          <span className="text-xs font-mono font-medium text-foreground/80 bg-muted/40 px-2 py-1.5 rounded block truncate">
+                            {key}
+                          </span>
+                        </div>
+                        <input
+                          type="text"
+                          value={(value as string) ?? ''}
+                          onChange={(e) => setTestParams({ ...testParams, [key]: e.target.value })}
+                          className="flex-1 px-3 py-1.5 border border-border/50 rounded-lg text-xs bg-background focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all font-mono"
+                          placeholder={`Enter ${key}`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newParams = { ...testParams };
+                            delete newParams[key];
+                            setTestParams(newParams);
+                          }}
+                          className="h-7 w-7 p-0 inline-flex items-center justify-center text-muted-foreground hover:text-destructive shrink-0 rounded-md hover:bg-muted transition-colors"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                    {/* File params from API definition */}
+                    {fileParamKeys.map((key) => (
+                      <div key={`filedef-${key}`} className="flex items-center gap-2">
+                        <div className="w-28 shrink-0">
+                          <span className="text-xs font-mono font-medium text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2 py-1.5 rounded block truncate">
+                            {key} <span className="text-[9px] opacity-60">(file)</span>
+                          </span>
+                        </div>
+                        {testFiles[key] ? (
+                          <div className="flex-1 px-3 py-1.5 border border-border/50 rounded-lg text-xs bg-background font-mono text-muted-foreground truncate">
+                            {testFiles[key].name} ({(testFiles[key].size / 1024).toFixed(1)}KB)
                           </div>
-                          
-                          {testResult.result.hint && (
-                            <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded border border-yellow-200 dark:border-yellow-800">
-                              <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-300">💡 Hint:</p>
-                              <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-1">
-                                {testResult.result.hint}
-                              </p>
-                            </div>
-                          )}
-
-                          {testResult.result.cleanedCode && (
-                            <div>
-                              <p className="text-sm font-semibold mb-2">Cleaned Code (after TypeScript removal):</p>
-                              <pre className="text-xs bg-slate-950 text-slate-100 p-3 rounded border border-slate-800 overflow-auto max-h-60 font-mono leading-relaxed">
-                                {testResult.result.cleanedCode}
-                              </pre>
-                            </div>
-                          )}
+                        ) : (
+                          <input
+                            type="file"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                setTestFiles({ ...testFiles, [key]: file });
+                              }
+                            }}
+                            className="flex-1 px-3 py-1 border border-border/50 rounded-lg text-xs bg-background file:mr-2 file:py-0.5 file:px-2 file:rounded file:border-0 file:text-[10px] file:bg-primary/10 file:text-primary"
+                          />
+                        )}
+                        {testFiles[key] && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newFiles = { ...testFiles };
+                              delete newFiles[key];
+                              setTestFiles(newFiles);
+                            }}
+                            className="h-7 w-7 p-0 inline-flex items-center justify-center text-muted-foreground hover:text-destructive shrink-0 rounded-md hover:bg-muted transition-colors"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    {/* Manually added file params */}
+                    {Object.entries(testFiles).filter(([key]) => !fileParamKeys.includes(key)).map(([key, file]) => (
+                      <div key={`file-${key}`} className="flex items-center gap-2">
+                        <div className="w-28 shrink-0">
+                          <span className="text-xs font-mono font-medium text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2 py-1.5 rounded block truncate">
+                            {key}
+                          </span>
                         </div>
-                      )}
+                        <div className="flex-1 px-3 py-1.5 border border-border/50 rounded-lg text-xs bg-background font-mono text-muted-foreground truncate">
+                          {file.name} ({(file.size / 1024).toFixed(1)}KB)
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newFiles = { ...testFiles };
+                            delete newFiles[key];
+                            setTestFiles(newFiles);
+                          }}
+                          className="h-7 w-7 p-0 inline-flex items-center justify-center text-muted-foreground hover:text-destructive shrink-0 rounded-md hover:bg-muted transition-colors"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-xs text-muted-foreground text-center py-4 bg-muted/10 rounded-lg border border-dashed border-border/50">
+                    No parameters defined
+                  </div>
+                )}
+                
+                {/* Add Custom Parameter */}
+                <div className="flex items-center gap-2 mt-3">
+                  <select
+                    value={newParamType}
+                    onChange={(e) => setNewParamType(e.target.value as 'text' | 'file')}
+                    className="w-16 shrink-0 px-1.5 py-1.5 border border-border/50 rounded-lg text-[10px] bg-background focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all"
+                  >
+                    <option value="text">Text</option>
+                    <option value="file">File</option>
+                  </select>
+                  <input
+                    type="text"
+                    placeholder="Key"
+                    value={newParamKey}
+                    onChange={(e) => setNewParamKey(e.target.value)}
+                    className="w-24 shrink-0 px-3 py-1.5 border border-border/50 rounded-lg text-xs bg-background focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all font-mono"
+                  />
+                  {newParamType === 'text' ? (
+                    <input
+                      type="text"
+                      placeholder="Value"
+                      value={newParamValue}
+                      onChange={(e) => setNewParamValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && newParamKey.trim()) {
+                          setTestParams({ ...testParams, [newParamKey.trim()]: newParamValue });
+                          setNewParamKey('');
+                          setNewParamValue('');
+                        }
+                      }}
+                      className="flex-1 px-3 py-1.5 border border-border/50 rounded-lg text-xs bg-background focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all font-mono"
+                    />
+                  ) : (
+                    <input
+                      type="file"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file && newParamKey.trim()) {
+                          setTestFiles({ ...testFiles, [newParamKey.trim()]: file });
+                          setNewParamKey('');
+                          e.target.value = '';
+                        }
+                      }}
+                      className="flex-1 px-3 py-1 border border-border/50 rounded-lg text-xs bg-background focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all file:mr-2 file:py-0.5 file:px-2 file:rounded file:border-0 file:text-[10px] file:bg-primary/10 file:text-primary"
+                    />
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (newParamKey.trim() && newParamType === 'text') {
+                        setTestParams({ ...testParams, [newParamKey.trim()]: newParamValue });
+                        setNewParamKey('');
+                        setNewParamValue('');
+                      }
+                    }}
+                    className="h-7 px-2.5 text-xs shrink-0 gap-1 inline-flex items-center justify-center rounded-md border border-border bg-background hover:bg-muted transition-colors"
+                  >
+                    <Plus className="h-3 w-3" />
+                  </button>
+                </div>
+              </div>
 
-                      {/* Full Result */}
-                      <details className="cursor-pointer">
-                        <summary className="text-sm font-semibold text-muted-foreground hover:text-foreground">
-                          View Full Result
-                        </summary>
-                        <pre className="text-sm bg-background p-4 rounded-lg border overflow-auto max-h-80 font-mono leading-relaxed mt-2">
-                          {JSON.stringify(testResult, null, 2)}
-                        </pre>
-                      </details>
-
+              {/* Response Section */}
+              <div className="px-5 py-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Response</h3>
+                  {testResult && (
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1.5">
+                        {testResult.result?.success 
+                          ? <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                          : <XCircle className="h-3.5 w-3.5 text-red-500" />
+                        }
+                        <span className={`text-[11px] font-medium ${
+                          testResult.result?.success ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                        }`}>
+                          {testResult.result?.success ? '200 OK' : 'Error'}
+                        </span>
+                      </div>
                       {testResult.executionTime !== undefined && (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2 border-t">
-                          <span className="text-lg">⚡</span>
-                          <span className="font-semibold">Execution time:</span>
-                          <span className="font-mono">{testResult.executionTime}ms</span>
-                        </div>
+                        <span className="text-[11px] text-muted-foreground font-mono">{testResult.executionTime}ms</span>
                       )}
                     </div>
-                  </div>
+                  )}
                 </div>
-              )}
+
+                {testResult ? (
+                  <div className="space-y-2">
+                    {/* Success Output */}
+                    {testResult.result?.success && testResult.result?.output && (
+                      <pre 
+                        className="text-xs bg-slate-950 text-slate-200 p-4 rounded-xl overflow-auto max-h-[250px] font-mono whitespace-pre-wrap break-all border border-slate-800/50 leading-relaxed"
+                        dangerouslySetInnerHTML={{
+                          __html: JSON.stringify(testResult.result.output, null, 2)
+                            .replace(
+                              /(https?:\/\/[^\s"',}\]]+)/g,
+                              '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:text-blue-300 underline underline-offset-2">$1</a>'
+                            )
+                        }}
+                      />
+                    )}
+
+                    {/* Error */}
+                    {testResult.result?.error && !testResult.result?.success && (
+                      <pre className="text-xs bg-red-950/20 text-red-400 p-4 rounded-xl overflow-auto max-h-[250px] font-mono whitespace-pre-wrap break-all border border-red-500/20 leading-relaxed">
+{testResult.result.error}</pre>
+                    )}
+
+                    {/* Hint */}
+                    {testResult.result?.hint && (
+                      <div className="flex items-start gap-2 text-xs text-yellow-700 dark:text-yellow-400 bg-yellow-500/10 p-3 rounded-lg border border-yellow-500/20">
+                        <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                        <span>{testResult.result.hint}</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-xs text-muted-foreground text-center py-8 bg-muted/10 rounded-xl border border-dashed border-border/50">
+                    Click <span className="font-semibold text-primary">Send</span> to execute the API
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Footer */}
-            <div className="flex items-center justify-end gap-3 p-6 border-t bg-muted/30">
-              <Button variant="outline" onClick={closeTestModal} size="lg">
-                Close
-              </Button>
+            {/* Footer - Minimal */}
+            <div className="flex items-center justify-between px-5 py-2.5 border-t border-border/50 bg-muted/20">
               <Link href={`/admin/api-edit/${testingApi.id}`}>
-                <Button size="lg">
-                  <span className="mr-2">✏️</span>
-                  Edit API
+                <Button variant="ghost" size="sm" className="text-[11px] gap-1.5 h-7">
+                  <Edit className="h-3 w-3" />
+                  Edit Source
                 </Button>
               </Link>
+              <Button variant="ghost" size="sm" onClick={() => setSandboxTab(sandboxTab === 'code' ? 'params' : 'code')} className="text-[11px] gap-1.5 h-7">
+                <Code2 className="h-3 w-3" />
+                View Code
+              </Button>
             </div>
+
+            {/* Code Drawer - Slides up when View Code is clicked */}
+            {sandboxTab === 'code' && (
+              <div className="border-t border-border/50 bg-slate-950 max-h-[250px] overflow-auto">
+                <div className="flex items-center justify-between px-5 py-2 border-b border-slate-800/50">
+                  <span className="text-[11px] font-medium text-slate-400">Source Code</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSandboxTab('params')}
+                    className="h-6 w-6 p-0 text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+                <pre className="text-[12px] text-slate-300 p-4 font-mono leading-relaxed whitespace-pre-wrap">
+                  {testingApi.rawScript || testingApi.code || 'No code available'}
+                </pre>
+              </div>
+            )}
           </div>
         </div>
       )}

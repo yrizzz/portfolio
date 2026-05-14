@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { GlowCard } from '@/components/ui/glow-card';
 import { AnimatedButton } from '@/components/ui/animated-button';
+import { BarChart3, Plug, CheckCircle2, Zap, PlusCircle, FileCode, ClipboardCheck } from 'lucide-react';
 
 export default function APIManagementDashboard() {
   const [stats, setStats] = useState<any>(null);
@@ -63,7 +64,7 @@ export default function APIManagementDashboard() {
                 {summary.totalRequests?.toLocaleString() || 0}
               </p>
             </div>
-            <div className="text-3xl">📊</div>
+            <div className="text-3xl"><BarChart3 className="h-8 w-8 text-blue-500" /></div>
           </div>
           <p className="text-xs text-muted-foreground mt-2">Last 24 hours</p>
         </GlowCard>
@@ -76,7 +77,7 @@ export default function APIManagementDashboard() {
                 {summary.activeEndpoints || 0} / {summary.totalEndpoints || 0}
               </p>
             </div>
-            <div className="text-3xl">🔌</div>
+            <div className="text-3xl"><Plug className="h-8 w-8 text-purple-500" /></div>
           </div>
           <p className="text-xs text-muted-foreground mt-2">Enabled endpoints</p>
         </GlowCard>
@@ -89,7 +90,7 @@ export default function APIManagementDashboard() {
                 {summary.successRate?.toFixed(1) || 0}%
               </p>
             </div>
-            <div className="text-3xl">✅</div>
+            <div className="text-3xl"><CheckCircle2 className="h-8 w-8 text-green-500" /></div>
           </div>
           <p className="text-xs text-muted-foreground mt-2">Last 24 hours</p>
         </GlowCard>
@@ -102,7 +103,7 @@ export default function APIManagementDashboard() {
                 {summary.avgResponseTime?.toFixed(0) || 0}ms
               </p>
             </div>
-            <div className="text-3xl">⚡</div>
+            <div className="text-3xl"><Zap className="h-8 w-8 text-yellow-500" /></div>
           </div>
           <p className="text-xs text-muted-foreground mt-2">Average time</p>
         </GlowCard>
@@ -116,7 +117,7 @@ export default function APIManagementDashboard() {
             href="/admin/api-create"
             className="flex items-center gap-3 p-4 border-2 border-dashed border-border rounded-lg hover:border-primary hover:bg-accent transition-colors"
           >
-            <span className="text-2xl">➕</span>
+            <span className="text-2xl"><PlusCircle className="h-6 w-6 text-primary" /></span>
             <div>
               <p className="font-medium">Create New API</p>
               <p className="text-sm text-muted-foreground">Add endpoint manually</p>
@@ -127,7 +128,7 @@ export default function APIManagementDashboard() {
             href="/admin/api-submit"
             className="flex items-center gap-3 p-4 border-2 border-dashed border-border rounded-lg hover:border-primary hover:bg-accent transition-colors"
           >
-            <span className="text-2xl">📝</span>
+            <span className="text-2xl"><FileCode className="h-6 w-6 text-primary" /></span>
             <div>
               <p className="font-medium">Submit Script</p>
               <p className="text-sm text-muted-foreground">AI-powered analysis</p>
@@ -138,7 +139,7 @@ export default function APIManagementDashboard() {
             href="/admin/api-review"
             className="flex items-center gap-3 p-4 border-2 border-dashed border-border rounded-lg hover:border-primary hover:bg-accent transition-colors"
           >
-            <span className="text-2xl">✅</span>
+            <span className="text-2xl"><ClipboardCheck className="h-6 w-6 text-primary" /></span>
             <div>
               <p className="font-medium">Review Queue</p>
               <p className="text-sm text-muted-foreground">Pending submissions</p>

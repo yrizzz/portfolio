@@ -124,12 +124,11 @@
   }
   body {
     @apply bg-background text-foreground;
-    overflow-x: hidden;
+    overflow-x: clip;
   }
   html {
     @apply font-sans scroll-smooth;
     scroll-behavior: smooth;
-    overflow-x: hidden;
   }
 }
 

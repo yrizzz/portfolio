@@ -1,50 +1,72 @@
-import { NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 
-const dataDir = path.join(process.cwd(), "data");
-const filePath = path.join(dataDir, "skills.json");
-
-// Default skills data
-const defaultSkills = [
-  { id: "1", name: "React", slug: "react", category: "Frontend" },
-  { id: "2", name: "Next.js", slug: "nextdotjs", category: "Frontend" },
-  { id: "3", name: "TypeScript", slug: "typescript", category: "Frontend" },
-  { id: "4", name: "Tailwind", slug: "tailwindcss", category: "Frontend" },
-  { id: "5", name: "Laravel", slug: "laravel", category: "Backend" },
-  { id: "6", name: "Node.js", slug: "nodedotjs", category: "Backend" },
-  { id: "7", name: "MySQL", slug: "mysql", category: "Database & ORM" },
-  { id: "8", name: "PostgreSQL", slug: "postgresql", category: "Database & ORM" },
-  { id: "9", name: "Git", slug: "git", category: "Tools" },
-  { id: "10", name: "Docker", slug: "docker", category: "Tools" },
-];
-
-// Ensure data directory exists
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
-}
-
-// Initialize file if not exists
-if (!fs.existsSync(filePath)) {
-  fs.writeFileSync(filePath, JSON.stringify(defaultSkills, null, 2));
-}
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const data = fs.readFileSync(filePath, "utf-8");
-    const skills = JSON.parse(data);
-    return NextResponse.json(skills);
-  } catch (error) {
-    return NextResponse.json(defaultSkills);
+    const skills = await prisma.skill.findMany({
+      orderBy: { order: 'asc' },
+    });
+
+    const mapped = skills.map((s: any) => ({
+      id: s.id,
+      name: s.name,
+      slug: s.slug,
+      category: s.category,
+    }));
+
+    return NextResponse.json(mapped);
+  } catch (error: any) {
+    console.error('Failed to fetch skills:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch skills', details: error.message },
+      { status: 500 }
+    );
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const skills = await request.json();
-    fs.writeFileSync(filePath, JSON.stringify(skills, null, 2));
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    return NextResponse.json({ error: "Failed to save skills" }, { status: 500 });
+    const data = await req.json();
+
+    // Handle bulk save (from admin page)
+    if (Array.isArray(data)) {
+      await prisma.skill.deleteMany();
+
+      for (let i = 0; i < data.length; i++) {
+        const s = data[i];
+        await prisma.skill.create({
+          data: {
+            id: s.id || crypto.randomUUID(),
+            name: s.name,
+            slug: s.slug || s.name.toLowerCase().replace(/[^a-z0-9]/g, ''),
+            category: s.category || 'Other',
+            order: i,
+          },
+        });
+      }
+
+      return NextResponse.json({ success: true });
+    }
+
+    // Single skill create
+    const skill = await prisma.skill.create({
+      data: {
+        id: crypto.randomUUID(),
+        name: data.name,
+        slug: data.slug || data.name.toLowerCase().replace(/[^a-z0-9]/g, ''),
+        category: data.category || 'Other',
+        order: data.order || 0,
+      },
+    });
+
+    return NextResponse.json({ success: true, skill });
+  } catch (error: any) {
+    console.error('Failed to save skills:', error);
+    return NextResponse.json(
+      { error: 'Failed to save skills', details: error.message },
+      { status: 500 }
+    );
   }
 }

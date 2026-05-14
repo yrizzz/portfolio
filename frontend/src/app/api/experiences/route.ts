@@ -1,61 +1,98 @@
-import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 
-const dataDir = path.join(process.cwd(), 'data');
-const experiencesFile = path.join(dataDir, 'experiences.json');
-
-// Ensure data directory exists
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
-}
-
-// Default data
-const defaultData = {
-  experiences: [
-    {
-      id: "1",
-      title: "Senior Full Stack Developer",
-      company: "Tech Company Inc.",
-      location: "Remote",
-      startDate: "2023-01",
-      endDate: null,
-      current: true,
-      description: "Leading development of scalable web applications using Next.js, Node.js, and cloud infrastructure."
-    }
-  ],
-  education: [
-    {
-      id: "1",
-      degree: "Bachelor of Computer Science",
-      institution: "University Name",
-      location: "City, State",
-      startDate: "2016-09",
-      endDate: "2020-06"
-    }
-  ]
-};
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    if (!fs.existsSync(experiencesFile)) {
-      fs.writeFileSync(experiencesFile, JSON.stringify(defaultData, null, 2));
-    }
-    const data = JSON.parse(fs.readFileSync(experiencesFile, 'utf-8'));
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error('Error reading experiences:', error);
-    return NextResponse.json(defaultData);
+    const experiences = await prisma.experience.findMany({
+      orderBy: { order: 'asc' },
+    });
+
+    const education = await prisma.education.findMany({
+      orderBy: { order: 'asc' },
+    });
+
+    return NextResponse.json({
+      experiences: experiences.map((e: any) => ({
+        id: e.id,
+        title: e.title,
+        company: e.company,
+        location: e.location,
+        period: e.period,
+        description: e.description,
+        current: e.current,
+      })),
+      education: education.map((e: any) => ({
+        id: e.id,
+        degree: e.degree,
+        institution: e.institution,
+        location: e.location,
+        period: e.period,
+      })),
+    });
+  } catch (error: any) {
+    console.error('Failed to fetch experiences:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch experiences', details: error.message },
+      { status: 500 }
+    );
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const data = await request.json();
-    fs.writeFileSync(experiencesFile, JSON.stringify(data, null, 2));
-    return NextResponse.json({ success: true, data });
-  } catch (error) {
-    console.error('Error saving experiences:', error);
-    return NextResponse.json({ error: 'Failed to save' }, { status: 500 });
+    const data = await req.json();
+    const { experiences, education } = data;
+
+    // Save experiences
+    if (experiences && Array.isArray(experiences)) {
+      await prisma.experience.deleteMany();
+
+      for (let i = 0; i < experiences.length; i++) {
+        const exp = experiences[i];
+        await prisma.experience.create({
+          data: {
+            id: exp.id || crypto.randomUUID(),
+            title: exp.title,
+            company: exp.company,
+            location: exp.location || '',
+            period: exp.period || `${exp.startDate || ''} - ${exp.endDate || 'Present'}`,
+            description: exp.description || '',
+            current: exp.current || false,
+            order: i,
+            updatedAt: new Date(),
+          },
+        });
+      }
+    }
+
+    // Save education
+    if (education && Array.isArray(education)) {
+      await prisma.education.deleteMany();
+
+      for (let i = 0; i < education.length; i++) {
+        const edu = education[i];
+        await prisma.education.create({
+          data: {
+            id: edu.id || crypto.randomUUID(),
+            degree: edu.degree,
+            institution: edu.institution,
+            location: edu.location || '',
+            period: edu.period || `${edu.startDate || ''} - ${edu.endDate || ''}`,
+            order: i,
+            updatedAt: new Date(),
+          },
+        });
+      }
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error('Failed to save experiences:', error);
+    return NextResponse.json(
+      { error: 'Failed to save experiences', details: error.message },
+      { status: 500 }
+    );
   }
 }

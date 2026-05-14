@@ -129,7 +129,7 @@ export function ProjectsSection() {
       <Tabs defaultValue="all" className="space-y-4">
         <div>
           <TabsList>
-            <TabsTrigger value="      all">All</TabsTrigger>
+            <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="fullstack">Full Stack</TabsTrigger>
             <TabsTrigger value="frontend">Frontend</TabsTrigger>
             <TabsTrigger value="backend">Backend</TabsTrigger>

@@ -61,7 +61,7 @@ export default function LogsPage() {
 
       {/* Filters */}
       <div className="GlowCard p-4 border border-gray-200 dark:border-gray-700">
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           <input
             type="text"
             value={filter.endpoint}
@@ -70,28 +70,30 @@ export default function LogsPage() {
             className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
           />
           
-          <select
-            value={filter.limit}
-            onChange={(e) => setFilter({ ...filter, limit: parseInt(e.target.value), offset: 0 })}
-            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-          >
-            <option value="50">50 per page</option>
-            <option value="100">100 per page</option>
-            <option value="200">200 per page</option>
-          </select>
+          <div className="flex gap-3">
+            <select
+              value={filter.limit}
+              onChange={(e) => setFilter({ ...filter, limit: parseInt(e.target.value), offset: 0 })}
+              className="flex-1 sm:flex-none px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+            >
+              <option value="50">50 per page</option>
+              <option value="100">100 per page</option>
+              <option value="200">200 per page</option>
+            </select>
 
-          <button
-            onClick={fetchLogs}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
-          >
-            Refresh
-          </button>
+            <button
+              onClick={fetchLogs}
+              className="px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium whitespace-nowrap"
+            >
+              Refresh
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Stats */}
       <div className="GlowCard p-4 border border-gray-200 dark:border-gray-700">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <p className="text-sm text-gray-600 dark:text-gray-400">
             Showing {filter.offset + 1} - {Math.min(filter.offset + filter.limit, total)} of {total.toLocaleString()} logs
           </p>

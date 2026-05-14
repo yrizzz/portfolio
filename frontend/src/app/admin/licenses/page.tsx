@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { GlowCard } from '@/components/ui/glow-card';
+import { toast } from 'sonner';
 
 interface License {
   id: string;
@@ -66,15 +67,15 @@ export default function LicensesPage() {
       const data = await response.json();
 
       if (response.ok) {
-        alert('License purchased successfully!');
+        toast.success('License purchased successfully!');
         setShowPurchaseModal(false);
         fetchLicenses();
       } else {
-        alert(data.error || 'Failed to purchase license');
+        toast.error(data.error || 'Failed to purchase license');
       }
     } catch (error) {
       console.error('Error purchasing license:', error);
-      alert('Failed to purchase license');
+      toast.error('Failed to purchase license');
     }
   };
 
@@ -91,11 +92,11 @@ export default function LicensesPage() {
       if (response.ok) {
         fetchLicenses();
       } else {
-        alert(data.error || 'Failed to toggle auto-renew');
+        toast.error(data.error || 'Failed to toggle auto-renew');
       }
     } catch (error) {
       console.error('Error toggling auto-renew:', error);
-      alert('Failed to toggle auto-renew');
+      toast.error('Failed to toggle auto-renew');
     }
   };
 
@@ -114,11 +115,11 @@ export default function LicensesPage() {
       if (response.ok) {
         fetchLicenses();
       } else {
-        alert(data.error || 'Failed to cancel license');
+        toast.error(data.error || 'Failed to cancel license');
       }
     } catch (error) {
       console.error('Error canceling license:', error);
-      alert('Failed to cancel license');
+      toast.error('Failed to cancel license');
     }
   };
 

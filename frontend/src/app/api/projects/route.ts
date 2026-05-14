@@ -1,63 +1,92 @@
-import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 
-const dataDir = path.join(process.cwd(), 'data');
-const projectsFile = path.join(dataDir, 'projects.json');
+export const dynamic = 'force-dynamic';
 
-// Default projects data
-const defaultProjects = [
-  {
-    id: "1",
-    title: "E-Commerce Platform",
-    description: "Full-stack e-commerce solution with payment integration and admin dashboard.",
-    image: "https://images.unsplash.com/photo-1557821552-17105176677c?w=400&h=300&fit=crop",
-    tags: ["Next.js", "TypeScript", "Prisma", "Stripe"],
-    liveUrl: "#",
-    githubUrl: "#",
-    category: "fullstack",
-    featured: true,
-  },
-  {
-    id: "2",
-    title: "Task Management App",
-    description: "Collaborative task management tool with real-time updates.",
-    image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400&h=300&fit=crop",
-    tags: ["React", "Node.js", "Socket.io", "MongoDB"],
-    liveUrl: "#",
-    githubUrl: "#",
-    category: "fullstack",
-    featured: false,
-  },
-];
-
-// Ensure data directory exists
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
-}
-
-// GET - Load projects
 export async function GET() {
   try {
-    if (fs.existsSync(projectsFile)) {
-      const data = fs.readFileSync(projectsFile, 'utf-8');
-      return NextResponse.json(JSON.parse(data));
-    }
-    return NextResponse.json(defaultProjects);
-  } catch (error) {
-    console.error('Error loading projects:', error);
-    return NextResponse.json(defaultProjects);
+    const projects = await prisma.project.findMany({
+      where: { published: true },
+      orderBy: { order: 'asc' },
+    });
+
+    // Map DB fields to frontend format
+    const mapped = projects.map((p: any) => ({
+      id: p.id,
+      title: p.title,
+      description: p.description,
+      image: p.image || '',
+      tags: p.techStack ? p.techStack.split(',').map((t: string) => t.trim()) : [],
+      liveUrl: p.demoUrl || '',
+      githubUrl: p.githubUrl || '',
+      category: p.category || 'fullstack',
+      featured: p.featured,
+    }));
+
+    return NextResponse.json(mapped);
+  } catch (error: any) {
+    console.error('Failed to fetch projects:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch projects', details: error.message },
+      { status: 500 }
+    );
   }
 }
 
-// POST - Save projects
-export async function POST(request: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const projects = await request.json();
-    fs.writeFileSync(projectsFile, JSON.stringify(projects, null, 2));
-    return NextResponse.json({ success: true, projects });
-  } catch (error) {
-    console.error('Error saving projects:', error);
-    return NextResponse.json({ error: 'Failed to save projects' }, { status: 500 });
+    const data = await req.json();
+
+    // Handle bulk save (from admin page)
+    if (Array.isArray(data)) {
+      // Delete all and recreate
+      await prisma.project.deleteMany();
+
+      for (let i = 0; i < data.length; i++) {
+        const p = data[i];
+        await prisma.project.create({
+          data: {
+            id: p.id || crypto.randomUUID(),
+            title: p.title,
+            description: p.description || '',
+            image: p.image || null,
+            techStack: Array.isArray(p.tags) ? p.tags.join(', ') : (p.techStack || ''),
+            demoUrl: p.liveUrl || p.demoUrl || null,
+            githubUrl: p.githubUrl || null,
+            featured: p.featured || false,
+            order: i,
+            published: true,
+            updatedAt: new Date(),
+          },
+        });
+      }
+
+      return NextResponse.json({ success: true });
+    }
+
+    // Single project create
+    const project = await prisma.project.create({
+      data: {
+        id: crypto.randomUUID(),
+        title: data.title,
+        description: data.description || '',
+        image: data.image || null,
+        techStack: Array.isArray(data.tags) ? data.tags.join(', ') : (data.techStack || ''),
+        demoUrl: data.liveUrl || data.demoUrl || null,
+        githubUrl: data.githubUrl || null,
+        featured: data.featured || false,
+        order: data.order || 0,
+        published: true,
+        updatedAt: new Date(),
+      },
+    });
+
+    return NextResponse.json({ success: true, project });
+  } catch (error: any) {
+    console.error('Failed to save projects:', error);
+    return NextResponse.json(
+      { error: 'Failed to save projects', details: error.message },
+      { status: 500 }
+    );
   }
 }

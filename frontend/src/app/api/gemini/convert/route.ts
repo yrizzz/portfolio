@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 import { getGeminiApiKey, getGeminiModel } from '@/lib/gemini';
+import { auth } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
+  const session = await auth();
+  if (!session || session.user?.role !== "ADMIN") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { code, fromLanguage, toLanguage } = await request.json();
 

@@ -6,18 +6,18 @@ import * as React from "react";
 import { 
   LayoutDashboard, 
   FolderKanban, 
-  Briefcase, 
-  Mail, 
+  Zap, 
+  Send, 
   Users, 
   BarChart3,
-  User,
+  UserCircle,
   Code2,
-  MessageSquare,
+  MessageCircle,
   ChevronDown,
   Moon,
   Sun,
   LogOut,
-  Code
+  Terminal
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import {
@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/sidebar";
 import { AnimatedIconButton } from "@/components/ui/animated-button";
 import { ParallaxBackground } from "@/components/parallax-background";
+import { SpaceBackground } from "@/components/space-background";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 const mainNav = [
@@ -47,11 +48,11 @@ const mainNav = [
 ];
 
 const contentNav = [
-  { title: "Profile", icon: User, href: "/admin/profile" },
+  { title: "Profile", icon: UserCircle, href: "/admin/profile" },
   { title: "Projects", icon: FolderKanban, href: "/admin/projects" },
   { title: "Skills", icon: Code2, href: "/admin/skills" },
-  { title: "Experience", icon: Briefcase, href: "/admin/experience" },
-  { title: "Contact Info", icon: Mail, href: "/admin/contact" },
+  { title: "Experience", icon: Zap, href: "/admin/experience" },
+  { title: "Contact Info", icon: Send, href: "/admin/contact" },
 ];
 
 const apiManagementNav = [
@@ -66,7 +67,7 @@ const apiManagementNav = [
 ];
 
 const otherNav = [
-  { title: "Messages", icon: MessageSquare, href: "/admin/messages" },
+  { title: "Messages", icon: MessageCircle, href: "/admin/messages" },
   { title: "Users", icon: Users, href: "/admin/users" },
   { title: "Analytics", icon: BarChart3, href: "/admin/analytics" },
 ];
@@ -178,7 +179,7 @@ function AdminSidebar() {
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
                     <SidebarMenuButton>
-                      <Code className="h-4 w-4" />
+                      <Terminal className="h-4 w-4" />
                       <span>API Management</span>
                       <ChevronDown className={`ml-auto h-4 w-4 transition-transform ${apiManagementOpen ? "rotate-180" : ""}`} />
                     </SidebarMenuButton>
@@ -254,10 +255,11 @@ export default function AdminLayout({
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
+        <SpaceBackground />
         <ParallaxBackground />
         <AdminSidebar />
-        <main className="flex-1 flex flex-col">
-          <div className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-xl">
+        <main className="flex-1 flex flex-col min-w-0">
+          <div className="sticky top-0 z-50 border-b border-gray-200/60 dark:border-white/10 bg-white/80 dark:bg-background/30 backdrop-blur-xl supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-background/20">
             <div className="flex h-14 items-center justify-between px-4">
               <div className="flex items-center gap-4">
                 <SidebarTrigger />
@@ -308,9 +310,19 @@ export default function AdminLayout({
               </div>
             </div>
           </div>
-          <div className="flex-1 p-4 md:p-6">
+          <div className="flex-1 p-4 md:p-6 w-full max-w-full overflow-x-auto">
             {children}
           </div>
+          <footer className="w-full border-t border-gray-200/60 dark:border-white/10 bg-white/80 dark:bg-background/30 backdrop-blur-xl mt-auto">
+            <div className="w-full px-6 py-4 flex items-center justify-center">
+              <div className="text-xs text-muted-foreground font-medium text-center">
+                © {new Date().getFullYear()} — Crafted by{" "}
+                <span className="font-bold bg-gradient-to-r from-[#0d47c4] to-[#3b82f6] bg-clip-text text-transparent">
+                  YrizzzDev
+                </span>
+              </div>
+            </div>
+          </footer>
         </main>
       </div>
     </SidebarProvider>

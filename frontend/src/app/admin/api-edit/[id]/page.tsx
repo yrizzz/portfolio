@@ -15,7 +15,8 @@ import { Label } from '@/components/ui/label';
 import { GlowCard } from '@/components/ui/glow-card';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Save, ArrowLeft, Play, AlertCircle, CheckCircle2, XCircle, Sparkles } from 'lucide-react';
+import { Save, ArrowLeft, Play, AlertCircle, CheckCircle2, XCircle, Sparkles, Plus, Trash2, FileText } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function EditAPIPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -24,7 +25,15 @@ export default function EditAPIPage({ params }: { params: Promise<{ id: string }
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [converting, setConverting] = useState(false);
+  const [detectingParams, setDetectingParams] = useState(false);
   const [testResult, setTestResult] = useState<any>(null);
+  const [apiParams, setApiParams] = useState<Array<{
+    name: string;
+    type: string;
+    required: boolean;
+    default: string;
+    description: string;
+  }>>([]);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -97,6 +106,17 @@ export default function EditAPIPage({ params }: { params: Promise<{ id: string }
           status: api.status,
         });
         
+        // Load params if exists
+        if (api.params) {
+          try {
+            const parsedParams = typeof api.params === 'string' ? JSON.parse(api.params) : api.params;
+            setApiParams(Array.isArray(parsedParams) ? parsedParams : []);
+          } catch (e) {
+            console.error('Failed to parse params:', e);
+            setApiParams([]);
+          }
+        }
+        
         const parsed = parseApiPath(api.path);
         if (parsed) {
           setPathBuilder({
@@ -106,11 +126,11 @@ export default function EditAPIPage({ params }: { params: Promise<{ id: string }
           });
         }
       } else {
-        alert('Failed to load API: ' + (data.error || 'Unknown error'));
+        toast.error('Failed to load API: ' + (data.error || 'Unknown error'));
       }
     } catch (error) {
       console.error('Failed to fetch API:', error);
-      alert('Failed to load API');
+      toast.error('Failed to load API');
     } finally {
       setLoading(false);
     }
@@ -147,7 +167,7 @@ export default function EditAPIPage({ params }: { params: Promise<{ id: string }
     e.preventDefault();
     
     if (!apiId) {
-      alert('API ID not loaded');
+      toast.error('API ID not loaded');
       return;
     }
     
@@ -155,7 +175,7 @@ export default function EditAPIPage({ params }: { params: Promise<{ id: string }
 
     try {
       if (pathError) {
-        alert(`Invalid path: ${pathError}`);
+        toast.error(`Invalid path: ${pathError}`);
         setSaving(false);
         return;
       }
@@ -163,19 +183,22 @@ export default function EditAPIPage({ params }: { params: Promise<{ id: string }
       const response = await fetch(`/api/endpoints/${apiId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          params: apiParams,  // Include params in update
+        }),
       });
 
       const data = await response.json();
 
       if (data.success) {
-        alert('API updated successfully!');
+        toast.success('API updated successfully!');
         router.push('/admin/api-data');
       } else {
-        alert(`Error: ${data.error}`);
+        toast.error(`Error: ${data.error}`);
       }
     } catch (error) {
-      alert('Failed to update API');
+      toast.error('Failed to update API');
     } finally {
       setSaving(false);
     }
@@ -183,7 +206,7 @@ export default function EditAPIPage({ params }: { params: Promise<{ id: string }
 
   const handleConvertCode = async () => {
     if (!formData.code) {
-      alert('Please enter code to convert');
+      toast.error('Please enter code to convert');
       return;
     }
 
@@ -203,14 +226,55 @@ export default function EditAPIPage({ params }: { params: Promise<{ id: string }
 
       if (data.success) {
         setFormData({ ...formData, code: data.convertedCode });
-        alert(`Code converted to ${formData.language} successfully!`);
+        toast.success(`Code converted to ${formData.language} successfully!`);
       } else {
-        alert(`Conversion failed: ${data.error}`);
+        toast.error(`Conversion failed: ${data.error}`);
       }
     } catch (error) {
-      alert('Failed to convert code');
+      toast.error('Failed to convert code');
     } finally {
       setConverting(false);
+    }
+  };
+
+  const handleDetectParameters = async () => {
+    if (!formData.code) {
+      toast.error('Please enter code first');
+      return;
+    }
+
+    setDetectingParams(true);
+    try {
+      const response = await fetch('/api/gemini/detect-params', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: formData.code,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        if (data.parameters.length > 0) {
+          setApiParams(data.parameters);
+          toast.success(`${data.message}! Parameters have been auto-filled.`);
+        } else {
+          toast.info('No parameters detected in the code. You can add them manually.');
+        }
+      } else {
+        let errorMsg = `Detection failed: ${data.error}`;
+        if (data.details) {
+          errorMsg += ` - ${JSON.stringify(data.details)}`;
+        }
+        console.error('Parameter detection error:', data);
+        toast.error(errorMsg);
+      }
+    } catch (error: any) {
+      console.error('Failed to detect parameters:', error);
+      toast.error(`Failed to detect parameters: ${error.message || 'Unknown error'}`);
+    } finally {
+      setDetectingParams(false);
     }
   };
 
@@ -414,6 +478,163 @@ export default function EditAPIPage({ params }: { params: Promise<{ id: string }
           </div>
         </GlowCard>
 
+        {/* Parameters Section */}
+        <GlowCard className="p-6">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold">API Parameters</h3>
+                <p className="text-sm text-muted-foreground">Define parameters that your API will accept</p>
+              </div>
+              <div className="flex gap-2">
+                <AnimatedButton
+                  type="button"
+                  onClick={handleDetectParameters}
+                  disabled={!formData.code || detectingParams}
+                  size="sm"
+                  variant="outline"
+                  className="gap-2 bg-purple-600 hover:bg-purple-700 text-white border-purple-600"
+                  hoverScale={1.05}
+                >
+                  <Sparkles className="h-4 w-4" />
+                  {detectingParams ? 'Detecting...' : 'Auto-Detect'}
+                </AnimatedButton>
+                <AnimatedButton
+                  type="button"
+                  onClick={() => setApiParams([...apiParams, { name: '', type: 'string', required: false, default: '', description: '' }])}
+                  size="sm"
+                  variant="outline"
+                  className="gap-2"
+                  hoverScale={1.05}
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Manually
+                </AnimatedButton>
+              </div>
+            </div>
+
+            {apiParams.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
+                <FileText className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                <p className="text-sm">No parameters defined yet</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {apiParams.map((param, index) => (
+                  <div key={index} className="p-4 border-2 border-border rounded-lg space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-semibold">Parameter {index + 1}</span>
+                      <AnimatedButton
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setApiParams(apiParams.filter((_, i) => i !== index))}
+                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                        hoverScale={1.1}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </AnimatedButton>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label>Name *</Label>
+                        <Input
+                          value={param.name}
+                          onChange={(e) => {
+                            const newParams = [...apiParams];
+                            newParams[index].name = e.target.value;
+                            setApiParams(newParams);
+                          }}
+                          placeholder="e.g., userId"
+                          className="border-2"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Type</Label>
+                         <select
+                          value={param.type}
+                          onChange={(e) => {
+                            const newParams = [...apiParams];
+                            newParams[index].type = e.target.value;
+                            setApiParams(newParams);
+                          }}
+                          className="w-full px-3 py-2 bg-background border-2 border-border rounded-lg"
+                        >
+                          <option value="string">String</option>
+                          <option value="number">Number</option>
+                          <option value="boolean">Boolean</option>
+                          <option value="array">Array</option>
+                          <option value="object">Object</option>
+                          <option value="file">File</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label>Default Value</Label>
+                        <Input
+                          value={param.default}
+                          onChange={(e) => {
+                            const newParams = [...apiParams];
+                            newParams[index].default = e.target.value;
+                            setApiParams(newParams);
+                          }}
+                          placeholder="Optional default value"
+                          className="border-2"
+                        />
+                      </div>
+                      
+                      <div className="flex items-center pt-8">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={param.required}
+                            onChange={(e) => {
+                              const newParams = [...apiParams];
+                              newParams[index].required = e.target.checked;
+                              setApiParams(newParams);
+                            }}
+                            className="w-4 h-4 rounded border-2 border-border"
+                          />
+                          <span className="text-sm">Required</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Description</Label>
+                      <Input
+                        value={param.description}
+                        onChange={(e) => {
+                          const newParams = [...apiParams];
+                          newParams[index].description = e.target.value;
+                          setApiParams(newParams);
+                        }}
+                        placeholder="Describe what this parameter does"
+                        className="border-2"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {apiParams.length > 0 && (
+              <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-800 rounded-lg">
+                <p className="text-xs text-blue-900 dark:text-blue-100">
+                  💡 <strong>Tip:</strong> Access parameters in your code using{' '}
+                  <code className="bg-blue-100 dark:bg-blue-900 px-1.5 py-0.5 rounded text-xs">
+                    const &#123; {apiParams.map(p => p.name).filter(Boolean).join(', ')} &#125; = params;
+                  </code>
+                </p>
+              </div>
+            )}
+          </div>
+        </GlowCard>
+
         {/* Code Section */}
         <GlowCard className="p-6">
           <div className="space-y-4">
@@ -470,25 +691,89 @@ export default function EditAPIPage({ params }: { params: Promise<{ id: string }
 
             {/* Test Result */}
             {testResult && (
-              <div className={`p-4 rounded-lg border-2 ${
-                testResult.success 
-                  ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800' 
-                  : 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800'
-              }`}>
-                <div className="flex items-start gap-2">
-                  <span className="text-lg">{testResult.success ? '✅' : '❌'}</span>
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-sm mb-2">
-                      {testResult.success ? 'Test Passed' : 'Test Failed'}
-                    </h4>
-                    <pre className="text-xs bg-background p-3 rounded border overflow-auto max-h-40 font-mono">
-                      {JSON.stringify(testResult, null, 2)}
-                    </pre>
-                    {testResult.executionTime && (
-                      <p className="text-xs text-muted-foreground mt-2">
-                        ⚡ Execution time: {testResult.executionTime}ms
-                      </p>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-semibold flex items-center gap-2">
+                    <Play className="h-4 w-4" />
+                    Test Result
+                  </h4>
+                  <button
+                    onClick={() => setTestResult(null)}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    ✕ Close
+                  </button>
+                </div>
+                
+                <div className={`rounded-lg border-2 overflow-hidden ${
+                  testResult.success 
+                    ? 'border-green-500/50 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20' 
+                    : 'border-red-500/50 bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/20 dark:to-rose-950/20'
+                }`}>
+                  {/* Header */}
+                  <div className={`px-4 py-3 border-b-2 flex items-center justify-between ${
+                    testResult.success 
+                      ? 'bg-green-100/50 dark:bg-green-900/20 border-green-500/30' 
+                      : 'bg-red-100/50 dark:bg-red-900/20 border-red-500/30'
+                  }`}>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">{testResult.success ? '✅' : '❌'}</span>
+                      <div>
+                        <p className="font-semibold text-sm">
+                          {testResult.success ? 'Test Passed' : 'Test Failed'}
+                        </p>
+                        {testResult.executionTime && (
+                          <p className="text-xs text-muted-foreground">
+                            ⚡ {testResult.executionTime}ms
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    {testResult.language && (
+                      <span className="text-xs px-2 py-1 rounded bg-background/50 font-mono">
+                        {testResult.language}
+                      </span>
                     )}
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-4 space-y-3">
+                    {/* Output */}
+                    {testResult.result?.output && (
+                      <div>
+                        <p className="text-xs font-semibold mb-2 text-muted-foreground">OUTPUT:</p>
+                        <pre className="text-xs bg-background/80 p-3 rounded-lg border overflow-auto max-h-48 font-mono">
+{JSON.stringify(testResult.result.output, null, 2)}</pre>
+                      </div>
+                    )}
+
+                    {/* Error */}
+                    {testResult.error && (
+                      <div>
+                        <p className="text-xs font-semibold mb-2 text-red-600 dark:text-red-400">ERROR:</p>
+                        <pre className="text-xs bg-red-100/50 dark:bg-red-900/20 p-3 rounded-lg border border-red-300 dark:border-red-800 overflow-auto max-h-32 font-mono text-red-900 dark:text-red-200">
+{testResult.error}</pre>
+                      </div>
+                    )}
+
+                    {/* Note */}
+                    {testResult.result?.note && (
+                      <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+                        <p className="text-xs text-blue-900 dark:text-blue-100">
+                          ℹ️ {testResult.result.note}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Full Result (Collapsible) */}
+                    <details className="group">
+                      <summary className="text-xs font-semibold cursor-pointer hover:text-primary transition-colors list-none flex items-center gap-2">
+                        <span className="group-open:rotate-90 transition-transform">▶</span>
+                        View Full Response
+                      </summary>
+                      <pre className="text-xs bg-muted/50 p-3 rounded-lg border mt-2 overflow-auto max-h-64 font-mono">
+{JSON.stringify(testResult, null, 2)}</pre>
+                    </details>
                   </div>
                 </div>
               </div>

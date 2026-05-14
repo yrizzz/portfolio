@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { GlowCard } from '@/components/ui/glow-card';
+import { BarChart3, CheckCircle2, Zap, Plug } from 'lucide-react';
 
 export default function MonitoringPage() {
   const [analytics, setAnalytics] = useState<any>(null);
@@ -43,7 +44,7 @@ export default function MonitoringPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Monitoring & Analytics</h2>
           <p className="text-muted-foreground mt-1">Track API performance and usage</p>
@@ -70,7 +71,7 @@ export default function MonitoringPage() {
                 {summary.totalRequests?.toLocaleString() || 0}
               </p>
             </div>
-            <div className="text-4xl">📊</div>
+            <div className="text-4xl"><BarChart3 className="h-10 w-10 text-blue-500" /></div>
           </div>
         </GlowCard>
 
@@ -82,7 +83,7 @@ export default function MonitoringPage() {
                 {summary.successRate?.toFixed(1) || 0}%
               </p>
             </div>
-            <div className="text-4xl">✅</div>
+            <div className="text-4xl"><CheckCircle2 className="h-10 w-10 text-green-500" /></div>
           </div>
         </GlowCard>
 
@@ -94,7 +95,7 @@ export default function MonitoringPage() {
                 {summary.avgResponseTime?.toFixed(0) || 0}ms
               </p>
             </div>
-            <div className="text-4xl">⚡</div>
+            <div className="text-4xl"><Zap className="h-10 w-10 text-yellow-500" /></div>
           </div>
         </GlowCard>
 
@@ -106,7 +107,7 @@ export default function MonitoringPage() {
                 {summary.activeEndpoints || 0}
               </p>
             </div>
-            <div className="text-4xl">🔌</div>
+            <div className="text-4xl"><Plug className="h-10 w-10 text-purple-500" /></div>
           </div>
         </GlowCard>
       </div>

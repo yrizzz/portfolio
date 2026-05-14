@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { GlowCard } from '@/components/ui/glow-card';
 import { AnimatedButton } from '@/components/ui/animated-button';
+import { toast } from 'sonner';
 
 interface Submission {
   id: string;
@@ -71,14 +72,14 @@ export default function APIReviewPage() {
 
       const data = await response.json();
       if (data.success) {
-        alert(`Submission ${action}ed successfully!`);
+        toast.success(`Submission ${action}ed successfully!`);
         setSelectedSubmission(null);
         fetchSubmissions();
       } else {
-        alert(`Failed to ${action}: ${data.error}`);
+        toast.error(`Failed to ${action}: ${data.error}`);
       }
     } catch (error) {
-      alert(`Error: ${error}`);
+      toast.error(`Error: ${error}`);
     } finally {
       setActionLoading(false);
     }
@@ -179,7 +180,7 @@ export default function APIReviewPage() {
                   </div>
                 )}
 
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <AnimatedButton
                     onClick={() => setSelectedSubmission(submission)}
                     variant="outline"

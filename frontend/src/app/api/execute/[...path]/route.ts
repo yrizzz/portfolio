@@ -3,9 +3,34 @@ import { prisma } from '@/lib/prisma';
 import { checkEndpointAuth } from '@/lib/api-auth';
 import { rateLimiter, generateRateLimitKey, getRateLimitHeaders } from '@/lib/rate-limiter';
 import { executeCode } from '@/lib/code-executor';
+import { writeFile, unlink, mkdir } from 'fs/promises';
+import { join } from 'path';
+import { tmpdir } from 'os';
+import crypto from 'crypto';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+// Security constants
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB max per file
+const MAX_TOTAL_SIZE = 10 * 1024 * 1024; // 10MB total
+const ALLOWED_MIME_TYPES = [
+  'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
+  'application/pdf',
+  'text/plain', 'text/csv', 'text/html',
+  'application/json',
+  'application/xml', 'text/xml',
+  'application/zip',
+  'audio/mpeg', 'audio/wav', 'audio/ogg',
+  'video/mp4', 'video/webm',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+];
+// Block dangerous extensions
+const BLOCKED_EXTENSIONS = [
+  '.exe', '.bat', '.cmd', '.sh', '.ps1', '.vbs', '.js', '.mjs',
+  '.php', '.py', '.rb', '.pl', '.jar', '.dll', '.so', '.dylib',
+];
 
 export async function GET(
   req: NextRequest,
@@ -47,11 +72,93 @@ export async function PATCH(
   return handleDynamicAPI(req, resolvedParams, 'PATCH');
 }
 
+interface FileInfo {
+  fieldName: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  tempPath: string;
+}
+
+async function handleFileUpload(req: NextRequest): Promise<{ params: Record<string, any>; files: FileInfo[]; error?: string }> {
+  const files: FileInfo[] = [];
+  const params: Record<string, any> = {};
+  
+  try {
+    const formData = await req.formData();
+    const tempDir = join(tmpdir(), 'api-uploads', crypto.randomBytes(8).toString('hex'));
+    await mkdir(tempDir, { recursive: true });
+
+    let totalSize = 0;
+
+    for (const [key, value] of formData.entries()) {
+      if (value instanceof File) {
+        // Validate file size
+        if (value.size > MAX_FILE_SIZE) {
+          return { params, files, error: `File "${value.name}" exceeds max size of ${MAX_FILE_SIZE / 1024 / 1024}MB` };
+        }
+        
+        totalSize += value.size;
+        if (totalSize > MAX_TOTAL_SIZE) {
+          return { params, files, error: `Total upload size exceeds ${MAX_TOTAL_SIZE / 1024 / 1024}MB` };
+        }
+
+        // Validate MIME type
+        if (!ALLOWED_MIME_TYPES.includes(value.type)) {
+          return { params, files, error: `File type "${value.type}" is not allowed` };
+        }
+
+        // Validate extension
+        const ext = '.' + (value.name.split('.').pop()?.toLowerCase() || '');
+        if (BLOCKED_EXTENSIONS.includes(ext)) {
+          return { params, files, error: `File extension "${ext}" is blocked for security reasons` };
+        }
+
+        // Sanitize filename - remove path traversal and special chars
+        const safeName = value.name
+          .replace(/[^a-zA-Z0-9._-]/g, '_')
+          .replace(/\.{2,}/g, '.')
+          .substring(0, 100);
+        
+        const tempPath = join(tempDir, `${crypto.randomBytes(8).toString('hex')}_${safeName}`);
+        const buffer = Buffer.from(await value.arrayBuffer());
+        
+        await writeFile(tempPath, buffer);
+        
+        files.push({
+          fieldName: key,
+          originalName: value.name,
+          mimeType: value.type,
+          size: value.size,
+          tempPath,
+        });
+      } else {
+        // Regular form field
+        params[key] = value;
+      }
+    }
+
+    return { params, files };
+  } catch (error: any) {
+    return { params, files, error: `File upload failed: ${error.message}` };
+  }
+}
+
+async function cleanupFiles(files: FileInfo[]) {
+  for (const file of files) {
+    try {
+      await unlink(file.tempPath);
+    } catch {}
+  }
+}
+
 async function handleDynamicAPI(
   req: NextRequest,
   params: { path: string[] },
   method: string
 ) {
+  let uploadedFiles: FileInfo[] = [];
+  
   try {
     const apiPath = '/' + (params.path?.join('/') || '');
     
@@ -116,27 +223,62 @@ async function handleDynamicAPI(
       queryParams[key] = value;
     });
 
-    let bodyParams = {};
+    let bodyParams: Record<string, any> = {};
+    let fileParams: FileInfo[] = [];
+
     if (['POST', 'PUT', 'PATCH'].includes(method)) {
-      try {
-        bodyParams = await req.json();
-      } catch (e) {
-        // No body or invalid JSON
+      const contentType = req.headers.get('content-type') || '';
+      
+      if (contentType.includes('multipart/form-data')) {
+        // Handle file upload
+        const uploadResult = await handleFileUpload(req);
+        
+        if (uploadResult.error) {
+          return NextResponse.json(
+            { error: uploadResult.error },
+            { status: 400 }
+          );
+        }
+        
+        bodyParams = uploadResult.params;
+        fileParams = uploadResult.files;
+        uploadedFiles = fileParams;
+      } else {
+        // Handle JSON body
+        try {
+          bodyParams = await req.json();
+        } catch (e) {
+          // No body or invalid JSON
+        }
       }
     }
 
-    const requestParams = {
+    const requestParams: Record<string, any> = {
       ...queryParams,
       ...bodyParams,
     };
+
+    // Add file info to params so scripts can access them
+    if (fileParams.length > 0) {
+      requestParams._files = fileParams.map(f => ({
+        fieldName: f.fieldName,
+        originalName: f.originalName,
+        mimeType: f.mimeType,
+        size: f.size,
+        path: f.tempPath,
+      }));
+    }
 
     // Execute the code based on language
     const executionResult = await executeCode(
       endpoint.language,
       endpoint.code,
       requestParams,
-      30000
+      60000
     );
+
+    // Clean up uploaded files after execution
+    await cleanupFiles(uploadedFiles);
 
     // Log the request
     await prisma.apiRequest.create({
@@ -175,6 +317,9 @@ async function handleDynamicAPI(
     return NextResponse.json(executionResult.output, { headers: rateLimitHeaders });
 
   } catch (error: any) {
+    // Clean up files on error
+    await cleanupFiles(uploadedFiles);
+    
     console.error('Dynamic API error:', error);
     return NextResponse.json(
       {

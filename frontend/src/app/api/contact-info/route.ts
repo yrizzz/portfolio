@@ -1,56 +1,54 @@
-import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 
-const dataDir = path.join(process.cwd(), 'data');
-const contactFile = path.join(dataDir, 'contact-info.json');
+export const dynamic = 'force-dynamic';
 
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
-}
-
-const defaultData = [
-  {
-    id: "1",
-    type: "Email",
-    value: "your@email.com",
-    href: "mailto:your@email.com",
-    icon: "mail"
-  },
-  {
-    id: "2",
-    type: "Phone",
-    value: "+1 (234) 567-890",
-    href: "tel:+1234567890",
-    icon: "phone"
-  },
-  {
-    id: "3",
-    type: "Location",
-    value: "Your City, Country",
-    href: null,
-    icon: "map-pin"
-  }
-];
-
+// Contact info is stored in SiteConfig with key prefix 'contact_'
 export async function GET() {
   try {
-    if (!fs.existsSync(contactFile)) {
-      fs.writeFileSync(contactFile, JSON.stringify(defaultData, null, 2));
+    const configs = await prisma.siteConfig.findMany({
+      where: { key: { startsWith: 'contact_' } },
+    });
+
+    // Parse contact items from config
+    const contactJson = configs.find((c: any) => c.key === 'contact_items');
+    
+    if (contactJson) {
+      try {
+        const items = JSON.parse(contactJson.value);
+        return NextResponse.json(items);
+      } catch {
+        return NextResponse.json([]);
+      }
     }
-    const data = JSON.parse(fs.readFileSync(contactFile, 'utf-8'));
-    return NextResponse.json(data);
-  } catch (error) {
-    return NextResponse.json(defaultData);
+
+    return NextResponse.json([]);
+  } catch (error: any) {
+    console.error('Failed to fetch contact info:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch contact info', details: error.message },
+      { status: 500 }
+    );
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const data = await request.json();
-    fs.writeFileSync(contactFile, JSON.stringify(data, null, 2));
-    return NextResponse.json({ success: true, data });
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to save' }, { status: 500 });
+    const data = await req.json();
+
+    // Store contact items as JSON in SiteConfig
+    await prisma.siteConfig.upsert({
+      where: { key: 'contact_items' },
+      update: { value: JSON.stringify(data), updatedAt: new Date() },
+      create: { id: crypto.randomUUID(), key: 'contact_items', value: JSON.stringify(data), updatedAt: new Date() },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error('Failed to save contact info:', error);
+    return NextResponse.json(
+      { error: 'Failed to save contact info', details: error.message },
+      { status: 500 }
+    );
   }
 }

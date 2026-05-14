@@ -15,6 +15,7 @@ import { GlowCard } from '@/components/ui/glow-card';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Upload, Code, Plus, Trash2, AlertCircle, Save, ArrowLeft, FileText, Sparkles } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function CreateAPIPage() {
   const router = useRouter();
@@ -82,13 +83,13 @@ export default function CreateAPIPage() {
 
     try {
       if (!formData.name || !formData.path || !formData.code) {
-        alert('Please fill all required fields');
+        toast.error('Please fill all required fields');
         setLoading(false);
         return;
       }
 
       if (pathError) {
-        alert(`Invalid path: ${pathError}`);
+        toast.error(`Invalid path: ${pathError}`);
         setLoading(false);
         return;
       }
@@ -98,20 +99,23 @@ export default function CreateAPIPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
-          params: JSON.stringify(params),
+          params: params,  // Send as array, will be stringified in backend
         }),
       });
 
       const data = await response.json();
+      console.log('Create API response:', data);
 
       if (data.success) {
-        alert('API created successfully!');
+        toast.success('API created successfully!');
         router.push('/admin/api-data');
       } else {
-        alert(`Error: ${data.error}`);
+        console.error('Create API error:', data);
+        toast.error(`Error: ${data.error}${data.details ? ' - ' + data.details : ''}`);
       }
-    } catch (error) {
-      alert('Failed to create API');
+    } catch (error: any) {
+      console.error('Failed to create API:', error);
+      toast.error(`Failed to create API: ${error.message || 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -142,7 +146,7 @@ export default function CreateAPIPage() {
 
   const handleConvertCode = async () => {
     if (!formData.code) {
-      alert('Please enter code to convert');
+      toast.error('Please enter code to convert');
       return;
     }
 
@@ -162,14 +166,57 @@ export default function CreateAPIPage() {
 
       if (data.success) {
         setFormData({ ...formData, code: data.convertedCode });
-        alert(`Code converted to ${formData.language} successfully!`);
+        toast.success(`Code converted to ${formData.language} successfully!`);
       } else {
-        alert(`Conversion failed: ${data.error}`);
+        toast.error(`Conversion failed: ${data.error}`);
       }
     } catch (error) {
-      alert('Failed to convert code');
+      toast.error('Failed to convert code');
     } finally {
       setConverting(false);
+    }
+  };
+
+  const [detectingParams, setDetectingParams] = useState(false);
+
+  const handleDetectParameters = async () => {
+    if (!formData.code) {
+      toast.error('Please enter code first');
+      return;
+    }
+
+    setDetectingParams(true);
+    try {
+      const response = await fetch('/api/gemini/detect-params', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: formData.code,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        if (data.parameters.length > 0) {
+          setParams(data.parameters);
+          toast.success(`${data.message}! Parameters have been auto-filled.`);
+        } else {
+          toast.info('No parameters detected in the code. You can add them manually.');
+        }
+      } else {
+        let errorMsg = `Detection failed: ${data.error}`;
+        if (data.details) {
+          errorMsg += ` - ${JSON.stringify(data.details)}`;
+        }
+        console.error('Parameter detection error:', data);
+        toast.error(errorMsg);
+      }
+    } catch (error: any) {
+      console.error('Failed to detect parameters:', error);
+      toast.error(`Failed to detect parameters: ${error.message || 'Unknown error'}`);
+    } finally {
+      setDetectingParams(false);
     }
   };
 
@@ -351,22 +398,36 @@ export default function CreateAPIPage() {
         {/* Parameters Section */}
         <GlowCard className="p-6">
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <h3 className="text-lg font-semibold">API Parameters</h3>
                 <p className="text-sm text-muted-foreground">Define parameters that your API will accept</p>
               </div>
-              <AnimatedButton
-                type="button"
-                onClick={() => setParams([...params, { name: '', type: 'string', required: false, default: '', description: '' }])}
-                size="sm"
-                variant="outline"
-                className="gap-2"
-                hoverScale={1.05}
-              >
-                <Plus className="h-4 w-4" />
-                Add Parameter
-              </AnimatedButton>
+              <div className="flex flex-wrap gap-2">
+                <AnimatedButton
+                  type="button"
+                  onClick={handleDetectParameters}
+                  disabled={!formData.code || detectingParams}
+                  size="sm"
+                  variant="outline"
+                  className="gap-2 bg-purple-600 hover:bg-purple-700 text-white border-purple-600"
+                  hoverScale={1.05}
+                >
+                  <Sparkles className="h-4 w-4" />
+                  {detectingParams ? 'Detecting...' : 'Auto-Detect'}
+                </AnimatedButton>
+                <AnimatedButton
+                  type="button"
+                  onClick={() => setParams([...params, { name: '', type: 'string', required: false, default: '', description: '' }])}
+                  size="sm"
+                  variant="outline"
+                  className="gap-2"
+                  hoverScale={1.05}
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Manually
+                </AnimatedButton>
+              </div>
             </div>
 
             {params.length === 0 ? (
@@ -495,7 +556,7 @@ export default function CreateAPIPage() {
                 <h3 className="text-lg font-semibold">API Code *</h3>
                 <p className="text-sm text-muted-foreground">Write or upload your API implementation</p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <AnimatedButton
                   type="button"
                   variant={codeInputMode === 'text' ? 'default' : 'outline'}

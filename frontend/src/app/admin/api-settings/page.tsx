@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { GlowCard } from '@/components/ui/glow-card';
 import { AnimatedButton } from '@/components/ui/animated-button';
+import { toast } from 'sonner';
 
 interface GeminiModel {
   name: string;
@@ -112,18 +113,12 @@ export default function SettingsPage() {
         return;
       }
 
-      // Validate model selection
-      if (!selectedModel) {
-        setMessage('❌ Please select a model first.');
-        setSaving(false);
-        return;
-      }
-
-      // Validate that models have been loaded
+      // Validate model selection (use default if not selected)
+      const modelToSave = selectedModel || 'gemini-2.5-flash';
+      
+      // Optional: Warn if models haven't been loaded yet
       if (availableModels.length === 0) {
-        setMessage('❌ Please load available models first by clicking "Load Available Models".');
-        setSaving(false);
-        return;
+        console.warn('[Settings] Saving without loading models first. Using default model:', modelToSave);
       }
 
       // Save API key
@@ -142,7 +137,7 @@ export default function SettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           key: 'GEMINI_MODEL',
-          value: selectedModel,
+          value: modelToSave,
         }),
       });
 
@@ -152,8 +147,12 @@ export default function SettingsPage() {
       console.log('Save response:', { keyData, modelData });
 
       if (keyData.success && modelData.success) {
-        setMessage('✅ Settings saved successfully to MySQL database!');
-        setTimeout(() => setMessage(''), 3000);
+        if (availableModels.length === 0) {
+          setMessage('✅ Settings saved successfully! You can now use "Load Available Models" to see all available models, or use the default model.');
+        } else {
+          setMessage('✅ Settings saved successfully to MySQL database!');
+        }
+        setTimeout(() => setMessage(''), 5000);
       } else {
         const errorMsg = keyData.error || keyData.details || modelData.error || modelData.details || 'Unknown error';
         setMessage(`❌ Error: ${errorMsg}`);
@@ -168,7 +167,7 @@ export default function SettingsPage() {
 
   const testGeminiConnection = async () => {
     if (!geminiKey) {
-      alert('Please enter a Gemini API key first');
+      toast.error('Please enter a Gemini API key first');
       return;
     }
 
@@ -250,7 +249,7 @@ export default function SettingsPage() {
 
           {/* Model Selector */}
           <div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
               <label className="block text-sm font-medium">
                 Gemini Model
               </label>
@@ -291,11 +290,12 @@ export default function SettingsPage() {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2">
             <AnimatedButton
               onClick={handleSave}
               disabled={saving || !geminiKey || availableModels.length === 0}
               hoverScale={1.05}
+              className="w-full sm:w-auto"
             >
               {saving ? 'Saving...' : 'Save Settings'}
             </AnimatedButton>
@@ -304,7 +304,7 @@ export default function SettingsPage() {
               onClick={testGeminiConnection}
               disabled={!geminiKey || availableModels.length === 0}
               variant="outline"
-              className="bg-green-600 hover:bg-green-700 text-white border-green-600"
+              className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white border-green-600"
               hoverScale={1.05}
             >
               Test Connection

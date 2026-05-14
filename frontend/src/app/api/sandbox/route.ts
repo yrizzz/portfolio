@@ -1,5 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { executeCode } from "@/lib/code-executor";
+import { writeFile, unlink, mkdir } from 'fs/promises';
+import { join } from 'path';
+import { tmpdir } from 'os';
+import crypto from 'crypto';
+
+// Security constants
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_MIME_TYPES = [
+  'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+  'application/pdf', 'text/plain', 'text/csv',
+  'application/json', 'application/xml',
+];
 
 // POST - Test/Execute API code in sandbox
 export async function POST(request: NextRequest) {
@@ -10,8 +23,64 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { code, language, testData } = body;
+    let code: string;
+    let language: string;
+    let testData: Record<string, any> = {};
+    let files: { fieldName: string; originalName: string; mimeType: string; size: number; path: string }[] = [];
+
+    const contentType = request.headers.get('content-type') || '';
+
+    if (contentType.includes('multipart/form-data')) {
+      // Handle file upload in sandbox
+      const formData = await request.formData();
+      code = formData.get('code') as string || '';
+      language = formData.get('language') as string || 'nodejs';
+      
+      const testDataStr = formData.get('testData') as string;
+      if (testDataStr) {
+        try { testData = JSON.parse(testDataStr); } catch {}
+      }
+
+      // Process files
+      const tempDir = join(tmpdir(), 'api-sandbox-uploads', crypto.randomBytes(8).toString('hex'));
+      await mkdir(tempDir, { recursive: true });
+
+      for (const [key, value] of formData.entries()) {
+        if (value instanceof File && key !== 'code' && key !== 'language' && key !== 'testData') {
+          if (value.size > MAX_FILE_SIZE) {
+            return NextResponse.json({ 
+              success: false, 
+              result: { success: false, error: `File "${value.name}" exceeds 5MB limit` } 
+            });
+          }
+          if (!ALLOWED_MIME_TYPES.includes(value.type)) {
+            return NextResponse.json({ 
+              success: false, 
+              result: { success: false, error: `File type "${value.type}" not allowed` } 
+            });
+          }
+
+          const safeName = value.name.replace(/[^a-zA-Z0-9._-]/g, '_').substring(0, 100);
+          const tempPath = join(tempDir, `${crypto.randomBytes(8).toString('hex')}_${safeName}`);
+          const buffer = Buffer.from(await value.arrayBuffer());
+          await writeFile(tempPath, buffer);
+
+          files.push({
+            fieldName: key,
+            originalName: value.name,
+            mimeType: value.type,
+            size: value.size,
+            path: tempPath,
+          });
+        }
+      }
+    } else {
+      // JSON body
+      const body = await request.json();
+      code = body.code || '';
+      language = body.language || 'nodejs';
+      testData = body.testData || {};
+    }
 
     if (!code || !language) {
       return NextResponse.json(
@@ -20,61 +89,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Sandbox execution logic
-    let result;
-    let executionTime = 0;
-    const startTime = Date.now();
-
-    try {
-      switch (language.toLowerCase()) {
-        case 'nodejs':
-        case 'javascript':
-          // Execute Node.js code in isolated context
-          result = await executeNodeJS(code, testData);
-          break;
-        
-        case 'python':
-          result = {
-            success: false,
-            error: "Python execution not yet implemented",
-            message: "Python sandbox coming soon"
-          };
-          break;
-        
-        case 'php':
-          result = {
-            success: false,
-            error: "PHP execution not yet implemented",
-            message: "PHP sandbox coming soon"
-          };
-          break;
-        
-        default:
-          result = {
-            success: false,
-            error: `Unsupported language: ${language}`
-          };
-      }
-
-      executionTime = Date.now() - startTime;
-
-      return NextResponse.json({
-        success: true,
-        result,
-        executionTime,
-        language,
-      });
-
-    } catch (execError: any) {
-      executionTime = Date.now() - startTime;
-      
-      return NextResponse.json({
-        success: false,
-        error: execError.message || "Execution failed",
-        executionTime,
-        language,
-      });
+    // Add files to params
+    const params: Record<string, any> = { ...testData };
+    if (files.length > 0) {
+      params._files = files.map(f => ({
+        fieldName: f.fieldName,
+        originalName: f.originalName,
+        mimeType: f.mimeType,
+        size: f.size,
+        path: f.path,
+      }));
     }
+
+    // Execute using the same executor as /api/execute
+    const startTime = Date.now();
+    const result = await executeCode(language, code, params, 60000);
+    const executionTime = Date.now() - startTime;
+
+    // Cleanup uploaded files
+    for (const file of files) {
+      try { await unlink(file.path); } catch {}
+    }
+
+    return NextResponse.json({
+      success: true,
+      result: {
+        success: result.success,
+        output: result.output,
+        error: result.error,
+      },
+      executionTime,
+      language,
+    });
 
   } catch (error: any) {
     console.error("Sandbox error:", error);
@@ -82,147 +128,5 @@ export async function POST(request: NextRequest) {
       { error: error.message || "Failed to execute code" },
       { status: 500 }
     );
-  }
-}
-
-// Execute Node.js code safely
-async function executeNodeJS(code: string, testData?: any) {
-  try {
-    // Step 1: Remove imports/exports
-    let cleanCode = code
-      .replace(/import\s+.*?from\s+['"].*?['"];?\s*/gm, '')
-      .replace(/export\s+default\s+/gm, 'const apiConfig = ')
-      .replace(/export\s+(class|function|const|let|var)/gm, '$1')
-      .replace(/export\s*\{[^}]*\}\s*/gm, '')
-      .replace(/require\s*\(['"].*?['"]\)/g, '{}');
-
-    // Step 2: Remove TypeScript type annotations (CAREFULLY - avoid object properties)
-    // Only remove type annotations after function parameters, not object properties
-    cleanCode = cleanCode
-      // Remove function parameter types: (param: Type) => (param)
-      .replace(/\(([^)]*?):\s*[\w<>\[\]|&]+([,\)])/g, '($1$2')
-      // Remove variable type annotations: const x: Type = => const x =
-      .replace(/\b(const|let|var)\s+(\w+)\s*:\s*[\w<>\[\]|&]+\s*=/g, '$1 $2 =')
-      // Remove function return types: ): Type => { => ) {
-      .replace(/\)\s*:\s*[\w<>\[\]|&]+\s*=>/g, ') =>')
-      .replace(/\)\s*:\s*[\w<>\[\]|&]+\s*\{/g, ') {')
-      // Remove 'as' type assertions
-      .replace(/\s+as\s+[\w<>\[\]|&]+/g, '')
-      // Remove generic types in function calls
-      .replace(/<[\w\s,<>]+>(?=\s*\()/g, '')
-      // Remove interface/type/enum declarations
-      .replace(/interface\s+\w+\s*\{[^}]*\}/gm, '')
-      .replace(/type\s+\w+\s*=\s*[^;]+;/gm, '')
-      .replace(/enum\s+\w+\s*\{[^}]*\}/gm, '')
-      // Remove decorators
-      .replace(/@\w+(\([^)]*\))?\s*/g, '')
-      // Remove access modifiers
-      .replace(/\b(readonly|public|private|protected|static)\s+/g, '');
-
-    // Step 3: Convert arrow functions to regular functions
-    cleanCode = cleanCode
-      // const fn = async (params) => { ... }
-      .replace(/const\s+(\w+)\s*=\s*async\s*\(([^)]*)\)\s*=>\s*\{/g, 'async function $1($2) {')
-      // const fn = (params) => { ... }
-      .replace(/const\s+(\w+)\s*=\s*\(([^)]*)\)\s*=>\s*\{/g, 'function $1($2) {')
-      // const fn = async (params) => expr
-      .replace(/const\s+(\w+)\s*=\s*async\s*\(([^)]*)\)\s*=>\s*([^;{]+);?/g, 'async function $1($2) { return $3; }')
-      // const fn = (params) => expr
-      .replace(/const\s+(\w+)\s*=\s*\(([^)]*)\)\s*=>\s*([^;{]+);?/g, 'function $1($2) { return $3; }');
-
-    // Step 4: Remove optional chaining and nullish coalescing
-    cleanCode = cleanCode
-      .replace(/\?\./g, '.')
-      .replace(/\?\?/g, '||');
-
-    // Step 5: Add execution wrapper
-    cleanCode = cleanCode + `
-
-// Execute the API
-if (typeof apiConfig !== 'undefined' && apiConfig.code) {
-  return await apiConfig.code(testData);
-}
-`;
-
-    // Create execution context
-    const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
-    
-    const context = {
-      console: {
-        log: (...args: any[]) => console.log('[SANDBOX]', ...args),
-        error: (...args: any[]) => console.error('[SANDBOX]', ...args),
-        warn: (...args: any[]) => console.warn('[SANDBOX]', ...args),
-      },
-      testData: testData || {},
-      fetch: fetch,
-      setTimeout,
-      setInterval,
-      clearTimeout,
-      clearInterval,
-      JSON,
-      Math,
-      Date,
-      Array,
-      Object,
-      String,
-      Number,
-      Boolean,
-      Promise,
-      Error,
-      // Mock axios
-      axios: {
-        get: async (url: string, config?: any) => {
-          console.log('[SANDBOX] Mock axios.get:', url);
-          return { data: { mock: true, message: 'Axios is mocked in sandbox', url } };
-        },
-        post: async (url: string, data?: any, config?: any) => {
-          console.log('[SANDBOX] Mock axios.post:', url);
-          return { data: { mock: true, message: 'Axios is mocked in sandbox', url } };
-        },
-        request: async (config: any) => {
-          console.log('[SANDBOX] Mock axios.request:', config);
-          return { data: { mock: true, message: 'Axios is mocked in sandbox', config } };
-        },
-      },
-      req: { body: testData, query: testData, params: testData },
-      res: { 
-        json: (data: any) => data,
-        status: (code: number) => ({ json: (data: any) => data }),
-        send: (data: any) => data
-      },
-    };
-
-    const wrappedCode = `
-      try {
-        ${cleanCode}
-      } catch (err) {
-        throw new Error('Runtime error: ' + err.message);
-      }
-    `;
-
-    const fn = new AsyncFunction(...Object.keys(context), wrappedCode);
-    const result = await Promise.race([
-      fn(...Object.values(context)),
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Execution timeout (10s)')), 10000)
-      )
-    ]);
-
-    return {
-      success: true,
-      output: result,
-      logs: [],
-      cleanedCode: cleanCode,
-      note: 'TypeScript syntax converted. Axios is mocked. External APIs will not be called.'
-    };
-
-  } catch (error: any) {
-    return {
-      success: false,
-      error: error.message,
-      stack: error.stack,
-      cleanedCode: code,
-      hint: 'Sandbox cannot execute this code. Try simpler JavaScript without complex TypeScript features.'
-    };
   }
 }

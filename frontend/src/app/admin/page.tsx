@@ -1,58 +1,83 @@
-import { auth } from "@/lib/auth";
+'use client';
+
+import { useState, useEffect } from 'react';
 import { 
   Users, 
   Key, 
   Activity, 
-  DollarSign,
-  TrendingUp,
+  FolderOpen,
   FileText,
-  BarChart3
+  BarChart3,
+  Code2
 } from "lucide-react";
+import { GlowCard } from '@/components/ui/glow-card';
+import { AnimatedButton } from '@/components/ui/animated-button';
 
-async function getAdminStats() {
-  // TODO: Replace with actual database queries
-  return {
+export default function AdminDashboard() {
+  const [stats, setStats] = useState({
     totalUsers: 0,
     activeApiKeys: 0,
     totalRequests: 0,
-    revenue: 0,
-    recentUsers: [],
-    recentRequests: [],
-  };
-}
+    totalProjects: 0,
+  });
+  const [recentLogs, setRecentLogs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-export default async function AdminDashboard() {
-  const session = await auth();
-  const stats = await getAdminStats();
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      const [statsRes, logsRes] = await Promise.all([
+        fetch('/api/admin/stats'),
+        fetch('/api/logs?limit=5'),
+      ]);
+
+      if (statsRes.ok) {
+        const data = await statsRes.json();
+        setStats(data);
+      }
+
+      if (logsRes.ok) {
+        const data = await logsRes.json();
+        setRecentLogs(data.logs || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const statCards = [
     {
       title: "Total Users",
       value: stats.totalUsers,
       icon: Users,
-      change: "+12%",
-      changeType: "positive" as const,
+      color: "text-blue-500",
+      bg: "bg-blue-500/10",
     },
     {
       title: "Active API Keys",
       value: stats.activeApiKeys,
       icon: Key,
-      change: "+8%",
-      changeType: "positive" as const,
+      color: "text-green-500",
+      bg: "bg-green-500/10",
     },
     {
       title: "API Requests",
       value: stats.totalRequests.toLocaleString(),
       icon: Activity,
-      change: "+23%",
-      changeType: "positive" as const,
+      color: "text-purple-500",
+      bg: "bg-purple-500/10",
     },
     {
-      title: "Revenue",
-      value: `Rp ${stats.revenue.toLocaleString()}`,
-      icon: DollarSign,
-      change: "+15%",
-      changeType: "positive" as const,
+      title: "Projects",
+      value: stats.totalProjects,
+      icon: FolderOpen,
+      color: "text-orange-500",
+      bg: "bg-orange-500/10",
     },
   ];
 
@@ -60,108 +85,133 @@ export default async function AdminDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-        <p className="text-muted-foreground mt-2">
-          Welcome back, {session?.user?.name}
-        </p>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Admin Dashboard</h2>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">Overview of your portfolio admin panel</p>
       </div>
 
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {statCards.map((stat) => (
-          <div
-            key={stat.title}
-            className="rounded-xl border bg-card p-6 shadow-sm hover:shadow-md transition-shadow"
-          >
+          <GlowCard key={stat.title} className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                   {stat.title}
                 </p>
-                <h3 className="text-2xl font-bold mt-2">{stat.value}</h3>
-                <p className={`text-sm mt-2 flex items-center gap-1 ${
-                  stat.changeType === "positive" 
-                    ? "text-green-600 dark:text-green-400" 
-                    : "text-red-600 dark:text-red-400"
-                }`}>
-                  <TrendingUp className="h-4 w-4" />
-                  {stat.change} from last month
-                </p>
+                <h3 className="text-2xl font-bold mt-2 text-gray-900 dark:text-gray-100">
+                  {loading ? '...' : stat.value}
+                </h3>
               </div>
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <stat.icon className="h-6 w-6 text-primary" />
+              <div className={`h-12 w-12 rounded-full ${stat.bg} flex items-center justify-center`}>
+                <stat.icon className={`h-6 w-6 ${stat.color}`} />
               </div>
             </div>
-          </div>
+          </GlowCard>
         ))}
       </div>
 
       {/* Quick Actions */}
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-xl border bg-card p-6">
+        <GlowCard className="p-6 group cursor-pointer" onClick={() => window.location.href = '/admin/projects'}>
           <div className="flex items-center gap-3 mb-4">
             <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
               <FileText className="h-5 w-5 text-blue-500" />
             </div>
-            <h3 className="font-semibold">Content Management</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100">Content Management</h3>
           </div>
-          <p className="text-sm text-muted-foreground mb-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
             Manage projects, experience, and skills
           </p>
-          <a
-            href="/admin/content"
-            className="text-sm font-medium text-primary hover:underline"
-          >
+          <span className="text-sm font-medium text-primary group-hover:underline">
             Manage Content →
-          </a>
-        </div>
+          </span>
+        </GlowCard>
 
-        <div className="rounded-xl border bg-card p-6">
+        <GlowCard className="p-6 group cursor-pointer" onClick={() => window.location.href = '/admin/api-data'}>
           <div className="flex items-center gap-3 mb-4">
             <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-              <Users className="h-5 w-5 text-green-500" />
+              <Code2 className="h-5 w-5 text-green-500" />
             </div>
-            <h3 className="font-semibold">User Management</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100">API Management</h3>
           </div>
-          <p className="text-sm text-muted-foreground mb-4">
-            View and manage user accounts
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            Create, edit, and manage API endpoints
           </p>
-          <a
-            href="/admin/users"
-            className="text-sm font-medium text-primary hover:underline"
-          >
-            Manage Users →
-          </a>
-        </div>
+          <span className="text-sm font-medium text-primary group-hover:underline">
+            Manage APIs →
+          </span>
+        </GlowCard>
 
-        <div className="rounded-xl border bg-card p-6">
+        <GlowCard className="p-6 group cursor-pointer" onClick={() => window.location.href = '/admin/api-monitoring'}>
           <div className="flex items-center gap-3 mb-4">
             <div className="h-10 w-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
               <BarChart3 className="h-5 w-5 text-purple-500" />
             </div>
-            <h3 className="font-semibold">API Analytics</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100">API Monitoring</h3>
           </div>
-          <p className="text-sm text-muted-foreground mb-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
             Monitor API usage and performance
           </p>
-          <a
-            href="/admin/analytics"
-            className="text-sm font-medium text-primary hover:underline"
-          >
-            View Analytics →
-          </a>
-        </div>
+          <span className="text-sm font-medium text-primary group-hover:underline">
+            View Monitoring →
+          </span>
+        </GlowCard>
       </div>
 
       {/* Recent Activity */}
-      <div className="rounded-xl border bg-card p-6">
-        <h3 className="font-semibold mb-4">Recent Activity</h3>
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground text-center py-8">
+      <GlowCard className="p-6">
+        <h3 className="font-semibold mb-4 text-gray-900 dark:text-gray-100">Recent API Requests</h3>
+        {loading ? (
+          <div className="text-center py-8">
+            <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+          </div>
+        ) : recentLogs.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-gray-50 dark:bg-gray-900/50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Method</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Endpoint</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Time</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {recentLogs.map((log: any, i: number) => (
+                  <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-1 text-xs font-medium rounded ${
+                        log.method === 'GET' ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' :
+                        log.method === 'POST' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200' :
+                        'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200'
+                      }`}>
+                        {log.method}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm font-mono text-gray-900 dark:text-gray-100">
+                      {log.endpoint}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-1 text-xs font-medium rounded ${
+                        log.statusCode < 400 ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
+                      }`}>
+                        {log.statusCode}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                      {log.responseTime}ms
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-600 dark:text-gray-400 text-center py-8">
             No recent activity to display
           </p>
-        </div>
-      </div>
+        )}
+      </GlowCard>
     </div>
   );
 }
