@@ -46,7 +46,7 @@ const ALLOWED_MODULES = [
 ];
 
 /**
- * Convert ES6 import statements to CommonJS require
+ * Convert ES6 import/export statements to CommonJS require/module.exports
  */
 function convertImportsToRequire(code: string): string {
   let converted = code;
@@ -67,6 +67,30 @@ function convertImportsToRequire(code: string): string {
   converted = converted.replace(
     /import\s+\*\s+as\s+(\w+)\s+from\s+['"]([^'"]+)['"]\s*;?/g,
     'const $1 = require("$2");'
+  );
+
+  // Convert: export default async function -> module.exports = async function
+  converted = converted.replace(
+    /export\s+default\s+(async\s+)?function/g,
+    'module.exports = $1function'
+  );
+
+  // Convert: export default async (...) => -> module.exports = async (...) =>
+  converted = converted.replace(
+    /export\s+default\s+(async\s+)?\(/g,
+    'module.exports = $1('
+  );
+
+  // Convert: export default async (params) => { -> module.exports = async (params) => {
+  converted = converted.replace(
+    /export\s+default\s+async\s*\(/g,
+    'module.exports = async ('
+  );
+
+  // Convert: export default (params) => { -> module.exports = (params) => {
+  converted = converted.replace(
+    /export\s+default\s+\(/g,
+    'module.exports = ('
   );
 
   // Convert: export default -> module.exports =
@@ -138,6 +162,14 @@ export async function executeNodeJS(code: string, params: any, timeout: number =
     // Convert ES6 imports to CommonJS requires
     const convertedCode = convertImportsToRequire(code);
 
+    // Debug: Log conversion for troubleshooting
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Code Executor] Original code length:', code.length);
+      console.log('[Code Executor] Converted code length:', convertedCode.length);
+      console.log('[Code Executor] Has export default:', /export\s+default/.test(code));
+      console.log('[Code Executor] Has module.exports:', /module\.exports/.test(convertedCode));
+    }
+
     await mkdir(tempDir, { recursive: true });
 
     const paramsJson = JSON.stringify(params);
@@ -149,15 +181,27 @@ ${convertedCode}
 // Execute the exported function
 (async () => {
   let result;
-  if (typeof exports.default === 'function') {
-    result = await exports.default(params);
-  } else if (typeof module.exports === 'function') {
-    result = await module.exports(params);
+  let fn = null;
+  
+  // Try different export patterns
+  if (typeof module.exports === 'function') {
+    fn = module.exports;
   } else if (typeof module.exports.default === 'function') {
-    result = await module.exports.default(params);
-  } else {
-    throw new Error('No executable function found in script');
+    fn = module.exports.default;
+  } else if (typeof exports.default === 'function') {
+    fn = exports.default;
+  } else if (typeof exports === 'function') {
+    fn = exports;
   }
+  
+  if (!fn) {
+    // Debug: show what was exported
+    const exportType = typeof module.exports;
+    const exportKeys = Object.keys(module.exports || {});
+    throw new Error(\`No executable function found. Export type: \${exportType}, Keys: \${exportKeys.join(', ') || 'none'}. Make sure to use: module.exports = async (params) => {...} or export default async (params) => {...}\`);
+  }
+  
+  result = await fn(params);
   process.stdout.write(JSON.stringify(result));
 })().catch(err => {
   process.stderr.write(err.message);

@@ -142,6 +142,17 @@ export default function EditAPIPage({ params }: { params: Promise<{ id: string }
       return;
     }
 
+    // Check if code has proper export
+    const hasExport = 
+      /module\.exports\s*=/.test(formData.code) ||
+      /exports\.default\s*=/.test(formData.code) ||
+      /export\s+default/.test(formData.code);
+    
+    if (!hasExport) {
+      toast.error('Code must export a function. Use: module.exports = async (params) => {...} or export default async (params) => {...}');
+      return;
+    }
+
     setTesting(true);
     setTestResult(null);
 
@@ -800,11 +811,16 @@ export default function EditAPIPage({ params }: { params: Promise<{ id: string }
                         {/* Common error hints */}
                         <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg">
                           <p className="text-xs font-semibold mb-2 text-yellow-900 dark:text-yellow-100">💡 Common Issues:</p>
-                          <ul className="text-xs text-yellow-900 dark:text-yellow-100 space-y-1 list-disc list-inside">
-                            <li>Make sure your code exports a function: <code className="bg-yellow-100 dark:bg-yellow-900/50 px-1 rounded">module.exports = async (params) =&gt; &#123;...&#125;</code></li>
-                            <li>Check that all required parameters are defined in the Parameters section</li>
-                            <li>Verify your code doesn't use blocked modules (child_process, vm, etc.)</li>
-                            <li>Ensure your function returns an object with proper structure</li>
+                          <ul className="text-xs text-yellow-900 dark:text-yellow-100 space-y-1.5 list-disc list-inside">
+                            <li><strong>No executable function found:</strong> Your code must export a function using one of these:
+                              <ul className="ml-4 mt-1 space-y-0.5">
+                                <li>• <code className="bg-yellow-100 dark:bg-yellow-900/50 px-1 rounded">module.exports = async (params) =&gt; &#123;...&#125;</code></li>
+                                <li>• <code className="bg-yellow-100 dark:bg-yellow-900/50 px-1 rounded">export default async (params) =&gt; &#123;...&#125;</code></li>
+                              </ul>
+                            </li>
+                            <li><strong>Missing parameters:</strong> Define all required parameters in the Parameters section with default values for testing</li>
+                            <li><strong>Blocked modules:</strong> Only use allowed modules (axios, cheerio, qrcode, etc.). Avoid: child_process, vm, fs-extra</li>
+                            <li><strong>Return structure:</strong> Always return an object like: <code className="bg-yellow-100 dark:bg-yellow-900/50 px-1 rounded">&#123; code: 200, status: true, data: ... &#125;</code></li>
                           </ul>
                         </div>
                       </div>
