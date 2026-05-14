@@ -137,27 +137,70 @@ export default function EditAPIPage({ params }: { params: Promise<{ id: string }
   };
 
   const handleTestCode = async () => {
+    if (!formData.code.trim()) {
+      toast.error('Please enter code to test');
+      return;
+    }
+
     setTesting(true);
     setTestResult(null);
 
     try {
+      // Build test params from apiParams
+      const testParams: Record<string, any> = {};
+      apiParams.forEach(param => {
+        if (param.default) {
+          testParams[param.name] = param.default;
+        } else if (param.type === 'string') {
+          testParams[param.name] = 'test_value';
+        } else if (param.type === 'number') {
+          testParams[param.name] = 123;
+        } else if (param.type === 'boolean') {
+          testParams[param.name] = true;
+        } else {
+          testParams[param.name] = 'test';
+        }
+      });
+
       const response = await fetch('/api/sandbox', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           code: formData.code,
           language: formData.language,
-          testData: { message: 'Test execution' }
+          testData: testParams
         }),
       });
 
       const data = await response.json();
-      setTestResult(data);
-    } catch (error) {
+      
+      // Handle different response formats
+      if (!response.ok) {
+        setTestResult({
+          success: false,
+          error: data.error || `HTTP ${response.status}: ${response.statusText}`,
+          result: data
+        });
+      } else {
+        setTestResult(data);
+      }
+      
+      // Show toast notification
+      if (data.success && data.result?.success) {
+        toast.success('Test passed successfully!');
+      } else if (data.error) {
+        toast.error(`Test failed: ${data.error}`);
+      } else if (data.result?.error) {
+        toast.error(`Execution error: ${data.result.error}`);
+      }
+    } catch (error: any) {
+      const errorMsg = error.message || 'Failed to test code';
       setTestResult({
         success: false,
-        error: 'Failed to test code'
+        error: errorMsg,
+        result: { success: false, error: errorMsg }
       });
+      toast.error(errorMsg);
     } finally {
       setTesting(false);
     }
@@ -748,11 +791,22 @@ export default function EditAPIPage({ params }: { params: Promise<{ id: string }
                     )}
 
                     {/* Error */}
-                    {testResult.error && (
+                    {(testResult.error || testResult.result?.error) && (
                       <div>
                         <p className="text-xs font-semibold mb-2 text-red-600 dark:text-red-400">ERROR:</p>
-                        <pre className="text-xs bg-red-100/50 dark:bg-red-900/20 p-3 rounded-lg border border-red-300 dark:border-red-800 overflow-auto max-h-32 font-mono text-red-900 dark:text-red-200">
-{testResult.error}</pre>
+                        <pre className="text-xs bg-red-100/50 dark:bg-red-900/20 p-3 rounded-lg border border-red-300 dark:border-red-800 overflow-auto max-h-32 font-mono text-red-900 dark:text-red-200 whitespace-pre-wrap">
+{testResult.error || testResult.result?.error}</pre>
+                        
+                        {/* Common error hints */}
+                        <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                          <p className="text-xs font-semibold mb-2 text-yellow-900 dark:text-yellow-100">💡 Common Issues:</p>
+                          <ul className="text-xs text-yellow-900 dark:text-yellow-100 space-y-1 list-disc list-inside">
+                            <li>Make sure your code exports a function: <code className="bg-yellow-100 dark:bg-yellow-900/50 px-1 rounded">module.exports = async (params) =&gt; &#123;...&#125;</code></li>
+                            <li>Check that all required parameters are defined in the Parameters section</li>
+                            <li>Verify your code doesn't use blocked modules (child_process, vm, etc.)</li>
+                            <li>Ensure your function returns an object with proper structure</li>
+                          </ul>
+                        </div>
                       </div>
                     )}
 
@@ -785,17 +839,26 @@ export default function EditAPIPage({ params }: { params: Promise<{ id: string }
                 Paste <strong>ONLY the function code</strong>, not the full object:
               </p>
               <pre className="text-xs bg-background p-3 rounded border overflow-x-auto">
-{`async (params) => {
+{`module.exports = async (params) => {
     const { phone } = params;
     
     // Your logic here
+    const result = await someApiCall(phone);
     
     return {
         code: 200,
         status: true,
         data: result
     };
-}`}</pre>
+};`}</pre>
+              <div className="mt-2 pt-2 border-t border-border">
+                <p className="text-xs font-semibold mb-1 text-muted-foreground">✅ Valid formats:</p>
+                <ul className="text-xs text-muted-foreground space-y-0.5 list-disc list-inside">
+                  <li><code className="bg-muted px-1 rounded">module.exports = async (params) =&gt; &#123;...&#125;</code></li>
+                  <li><code className="bg-muted px-1 rounded">exports.default = async (params) =&gt; &#123;...&#125;</code></li>
+                  <li><code className="bg-muted px-1 rounded">module.exports.default = async (params) =&gt; &#123;...&#125;</code></li>
+                </ul>
+              </div>
             </div>
           </div>
         </GlowCard>
