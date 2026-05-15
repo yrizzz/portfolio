@@ -13,9 +13,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const user = await User.findOne({
-      { email: session.user.email },
-    });
+    const user = await User.findOne({ email: session.user.email });
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -28,21 +26,16 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Verify ownership
-    const apiKey = await ApiKey.findOne({
-      { 
+    const apiKey = await ApiKey.findOne({ 
         id,
-        userId: user.id 
-      }
-    });
+        userId: user._id 
+      });
 
     if (!apiKey) {
       return NextResponse.json({ error: 'API key not found' }, { status: 404 });
     }
 
-    const updatedKey = await ApiKey.findByIdAndUpdate({
-      { id },
-      data: { isActive: isActive ?? !apiKey.isActive }
-    });
+    const updatedKey = await ApiKey.findByIdAndUpdate( id , { isActive: isActive ?? !Apikey.isActive });
 
     return NextResponse.json({ 
       apiKey: updatedKey,

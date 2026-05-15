@@ -11,14 +11,9 @@ export async function GET(request: NextRequest) {
 
     // Fetch all approved and enabled endpoints
     const endpoints = await ApiEndpoint.find({
-      {
         status: 'approved',
         enabled: true,
       },
-      orderBy: [
-        { category: 'asc' },
-        { path: 'asc' },
-      ],
     });
 
     if (format === 'openapi') {
@@ -95,8 +90,7 @@ function generateOpenAPISpec(endpoints: any[]) {
             };
             if (param.required) {
               required.push(param.name);
-            }
-          });
+            });
           
           requestBody = {
             required: required.length > 0,

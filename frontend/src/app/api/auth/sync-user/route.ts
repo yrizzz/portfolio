@@ -1,8 +1,10 @@
+import { connectDB } from '@/lib/mongodb';
+import { User } from '@/models';
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import prisma from "@/lib/prisma";
 
 export async function POST() {
+  await connectDB();
   try {
     const session = await auth();
     
@@ -11,19 +13,15 @@ export async function POST() {
     }
 
     // Check if user exists
-    let user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    });
+    let user = await User.findOne({ email: session.user.email }).lean();
 
     // Create user if doesn't exist
     if (!user) {
-      user = await prisma.user.create({
-        data: {
-          email: session.user.email,
-          name: session.user.name || null,
-          image: session.user.image || null,
-          role: "USER",
-        }
+      user = await User.create({
+        email: session.user.email,
+        name: session.user.name || null,
+        image: session.user.image || null,
+        role: "USER",
       });
     }
 

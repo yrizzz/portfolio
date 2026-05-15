@@ -1,16 +1,17 @@
+import { connectDB } from '@/lib/mongodb';
+import { Experience } from \'@/models\';
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import prisma from "@/lib/prisma";
 
 export async function GET(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
+  await connectDB();
   try {
     const { id } = await context.params;
-    const experience = await prisma.experience.findUnique({
-      where: { id }
-    });
+    const experience = await Experience.findUnique({
+      where: { id });
     
     if (!experience) {
       return NextResponse.json({ error: "Experience not found" }, { status: 404 });
@@ -26,6 +27,7 @@ export async function PUT(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
+  await connectDB();
   try {
     const session = await auth();
     if (!session || session.user?.role !== "ADMIN") {
@@ -35,7 +37,7 @@ export async function PUT(
     const { id } = await context.params;
     const body = await request.json();
     
-    const experience = await prisma.experience.update({
+    const experience = await Experience.update({
       where: { id },
       data: {
         title: body.title,
@@ -45,8 +47,7 @@ export async function PUT(
         description: body.description,
         current: body.current || false,
         order: body.order || 0,
-      }
-    });
+      });
 
     return NextResponse.json(experience);
   } catch (error) {
@@ -58,6 +59,7 @@ export async function DELETE(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
+  await connectDB();
   try {
     const session = await auth();
     if (!session || session.user?.role !== "ADMIN") {
@@ -65,9 +67,8 @@ export async function DELETE(
     }
 
     const { id } = await context.params;
-    await prisma.experience.delete({
-      where: { id }
-    });
+    await Experience.delete({
+      where: { id });
 
     return NextResponse.json({ success: true });
   } catch (error) {

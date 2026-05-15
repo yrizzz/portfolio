@@ -1,5 +1,7 @@
+import { connectDB } from '@/lib/mongodb';
+import { ApiEndpoint } from \'@/models\';
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { connectDB } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 
 // GET - Get single endpoint
@@ -7,6 +9,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  await connectDB();
   try {
     const session = await auth();
     
@@ -16,9 +19,8 @@ export async function GET(
 
     const { id } = await params;
 
-    const endpoint = await prisma.apiEndpoint.findUnique({
-      where: { id }
-    });
+    const endpoint = await ApiEndpoint.findUnique({
+      where: { id });
 
     if (!endpoint) {
       return NextResponse.json({ error: "Endpoint not found" }, { status: 404 });
@@ -49,6 +51,7 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  await connectDB();
   try {
     const session = await auth();
     
@@ -98,7 +101,7 @@ export async function PUT(
     
     updateData.updatedAt = new Date();
 
-    const endpoint = await prisma.apiEndpoint.update({
+    const endpoint = await ApiEndpoint.update({
       where: { id },
       data: updateData
     });
@@ -122,6 +125,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  await connectDB();
   try {
     const session = await auth();
     
@@ -131,9 +135,8 @@ export async function DELETE(
 
     const { id } = await params;
 
-    await prisma.apiEndpoint.delete({
-      where: { id }
-    });
+    await ApiEndpoint.delete({
+      where: { id });
 
     return NextResponse.json({ 
       success: true,

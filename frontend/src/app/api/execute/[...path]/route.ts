@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
+import { ApiEndpoint } from \'@/models\';
 import { ApiRequest, ApiEndpoint } from '@/models';
 import { checkEndpointAuth } from '@/lib/api-auth';
 import { rateLimiter, generateRateLimitKey, getRateLimitHeaders } from '@/lib/rate-limiter';
@@ -170,13 +171,11 @@ async function handleDynamicAPI(
     
     // Find the endpoint in database
     const endpoint = await ApiEndpoint.findOne({
-      {
         path: apiPath,
         method: method,
         enabled: true,
         status: 'approved',
-      },
-    });
+      });
 
     if (!endpoint) {
       return NextResponse.json(
@@ -288,7 +287,6 @@ async function handleDynamicAPI(
 
     // Log the request
     await ApiRequest.create({
-      data: {
         endpoint: apiPath,
         method: method,
         statusCode: executionResult.success ? 200 : 500,

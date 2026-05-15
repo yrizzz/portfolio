@@ -21,9 +21,7 @@ export async function GET(req: NextRequest) {
 
     if (key) {
       console.log('[Config GET] Fetching config for key:', key);
-      const config = await SiteConfig.findOne({
-        { key },
-      });
+      const config = await SiteConfig.findOne({ key });
       
       console.log('[Config GET] Found config:', config ? 'Yes' : 'No');
       
@@ -77,8 +75,7 @@ export async function POST(req: NextRequest) {
     // Sanitize value if it's an API key
     const cleanValue = typeof value === 'string' ? value.trim() : value;
 
-    const config = await prisma.siteConfig.upsert({
-      { key },
+    const config = await Siteconfig.upsert({ key },
       update: { value: cleanValue, updatedAt: new Date() },
       create: { key, value: cleanValue },
     });

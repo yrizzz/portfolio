@@ -8,9 +8,7 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   await connectDB();
   try {
-    const messages = await Contact.find({
-      .sort({ createdAt: -1 }),
-    });
+    const messages = await Contact.find().sort({ createdAt: -1 }).lean();
 
     return NextResponse.json({ messages });
   } catch (error: any) {
@@ -30,9 +28,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Name, email, and message are required' }, { status: 400 });
     }
 
-    const contact = await Contact.create({
-      data: { name, email, subject: subject || null, message },
-    });
+    const contact = await Contact.create({ name, email, subject: subject || null, message });
 
     return NextResponse.json({ success: true, message: contact });
   } catch (error: any) {
@@ -57,10 +53,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Missing message id' }, { status: 400 });
     }
 
-    await Contact.findByIdAndUpdate({
-      { id },
-      data: { read },
-    });
+    await Contact.findByIdAndUpdate(id, { read });
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
@@ -86,9 +79,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Missing message id' }, { status: 400 });
     }
 
-    await Contact.findByIdAndDelete({
-      { id },
-    });
+    await Contact.findByIdAndDelete(id);
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

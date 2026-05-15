@@ -20,10 +20,8 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get('status') || 'pending';
 
     const submissions = await ApiEndpoint.find({
-      {
         status: status,
       },
-      orderBy: {
         createdAt: 'desc',
       },
     });
@@ -103,8 +101,7 @@ export async function PATCH(req: NextRequest) {
       updateData.rejectedReason = rejectedReason || 'No reason provided';
     }
 
-    const endpoint = await ApiEndpoint.findByIdAndUpdate({
-      { id },
+    const endpoint = await ApiEndpoint.findByIdAndUpdate({ id },
       data: updateData,
     });
 

@@ -13,9 +13,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const user = await User.findOne({
-      { email: session.user.email },
-    });
+    const user = await User.findOne({ email: session.user.email });
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -28,21 +26,16 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Verify ownership
-    const license = await License.findOne({
-      { 
+    const license = await License.findOne({ 
         id,
-        userId: user.id 
-      }
-    });
+        userId: user._id 
+      });
 
     if (!license) {
       return NextResponse.json({ error: 'License not found' }, { status: 404 });
     }
 
-    const updatedLicense = await License.findByIdAndUpdate({
-      { id },
-      data: { autoRenew: autoRenew ?? !license.autoRenew }
-    });
+    const updatedLicense = await License.findByIdAndUpdate( id , { autoRenew: autoRenew ?? !License.autoRenew });
 
     return NextResponse.json({ 
       license: updatedLicense,

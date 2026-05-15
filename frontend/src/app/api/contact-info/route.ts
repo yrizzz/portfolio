@@ -8,9 +8,7 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   await connectDB();
   try {
-    const configs = await SiteConfig.find({
-      { key: { startsWith: 'contact_' } },
-    });
+    const configs = await SiteConfig.find({ key: /^contact_/ });
 
     // Parse contact items from config
     const contactJson = configs.find((c: any) => c.key === 'contact_items');
@@ -40,11 +38,11 @@ export async function POST(req: NextRequest) {
     const data = await req.json();
 
     // Store contact items as JSON in SiteConfig
-    await prisma.siteConfig.upsert({
+    await SiteConfig.findOneAndUpdate(
       { key: 'contact_items' },
-      update: { value: JSON.stringify(data), updatedAt: new Date() },
-      create: { id: crypto.randomUUID(), key: 'contact_items', value: JSON.stringify(data), updatedAt: new Date() },
-    });
+      { value: JSON.stringify(data), updatedAt: new Date() },
+      { upsert: true, new: true }
+    );
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

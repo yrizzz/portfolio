@@ -1,16 +1,16 @@
+import { connectDB } from '@/lib/mongodb';
+import { Project } from '@/models';
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import prisma from "@/lib/prisma";
 
 export async function GET(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
+  await connectDB();
   try {
     const { id } = await context.params;
-    const project = await prisma.project.findUnique({
-      where: { id }
-    });
+    const project = await Project.findById(id).lean();
 
     if (!project) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
@@ -26,6 +26,7 @@ export async function PUT(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
+  await connectDB();
   try {
     const session = await auth();
     if (!session || session.user?.role !== "ADMIN") {
@@ -35,7 +36,7 @@ export async function PUT(
     const { id } = await context.params;
     const body = await request.json();
 
-    const project = await prisma.project.update({
+    const project = await Project.update({
       where: { id },
       data: {
         title: body.title,
@@ -47,8 +48,7 @@ export async function PUT(
         featured: body.featured,
         order: body.order,
         published: body.published,
-      }
-    });
+      });
 
     return NextResponse.json(project);
   } catch (error) {
@@ -67,9 +67,8 @@ export async function DELETE(
     }
 
     const { id } = await context.params;
-    await prisma.project.delete({
-      where: { id }
-    });
+    await Project.delete({
+      where: { id });
 
     return NextResponse.json({ success: true });
   } catch (error) {

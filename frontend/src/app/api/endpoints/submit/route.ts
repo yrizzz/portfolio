@@ -95,7 +95,6 @@ Return ONLY valid JSON without any markdown formatting or code blocks.
 
     // Create pending endpoint submission
     const endpoint = await ApiEndpoint.create({
-      data: {
         name: aiAnalysis.name || 'Unnamed API',
         description: aiAnalysis.description || '',
         method: aiAnalysis.method || 'GET',

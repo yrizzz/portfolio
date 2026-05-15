@@ -13,16 +13,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const user = await User.findOne({
-      { email: session.user.email },
-    });
+    const user = await User.findOne({ email: session.user.email });
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const licenses = await License.find({
-      { userId: user.id },
+    const licenses = await License.find({ userId: user._id },
       .sort({ createdAt: -1 }),
     });
 
@@ -43,9 +40,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const user = await User.findOne({
-      { email: session.user.email },
-    });
+    const user = await User.findOne({ email: session.user.email });
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -73,8 +68,7 @@ export async function POST(request: NextRequest) {
     // For now, we'll create the license directly (demo mode)
 
     const license = await License.create({
-      data: {
-        userId: user.id,
+        userId: user._id,
         type,
         price: config.price,
         startDate,
@@ -104,9 +98,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const user = await User.findOne({
-      { email: session.user.email },
-    });
+    const user = await User.findOne({ email: session.user.email });
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -120,25 +112,20 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Verify ownership
-    const license = await License.findOne({
-      { 
+    const license = await License.findOne({ 
         id: licenseId,
-        userId: user.id 
-      }
-    });
+        userId: user._id 
+      });
 
     if (!license) {
       return NextResponse.json({ error: 'License not found' }, { status: 404 });
     }
 
     // Deactivate license instead of deleting
-    await License.findByIdAndUpdate({
-      { id: licenseId },
-      data: { 
+    await License.findByIdAndUpdate( id: licenseId , { 
         isActive: false,
         autoRenew: false 
-      }
-    });
+      });
 
     return NextResponse.json({ message: 'License canceled successfully' });
   } catch (error) {

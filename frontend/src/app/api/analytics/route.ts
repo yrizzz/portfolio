@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { connectDB } from '@/lib/mongodb';
+import { ApiEndpoint } from \'@/models\';
 import { ApiRequest, ApiEndpoint } from '@/models';
 
 // GET - Get API analytics and monitoring data
@@ -37,114 +38,84 @@ export async function GET(req: NextRequest) {
 
     // Get total requests
     const totalRequests = await ApiRequest.countDocuments({
-      {
-        createdAt: {
-          gte: startDate,
-        },
-      },
+      createdAt: { $gte: startDate },
     });
 
-    // Get requests by status code
-    const requestsByStatus = await prisma.apiRequest.groupBy({
-      by: ['statusCode'],
-      {
-        createdAt: {
-          gte: startDate,
-        },
-      },
-      _count: {
-        statusCode: true,
-      },
-    });
+    // Get requests by status code using aggregation
+    const requestsByStatus = await ApiRequest.aggregate([
+      { $match: { createdAt: { $gte: startDate } } },
+      { $group: { _id: '$statusCode', count: { $sum: 1 } } },
+      { $sort: { _id: 1 } }
+    ]);
 
     // Get requests by endpoint
-    const requestsByEndpoint = await prisma.apiRequest.groupBy({
-      by: ['endpoint'],
-      {
-        createdAt: {
-          gte: startDate,
-        },
-      },
-      _count: {
-        endpoint: true,
-      },
-      orderBy: {
-        _count: {
-          endpoint: 'desc',
-        },
-      },
-      take: 10,
-    });
+    const requestsByEndpoint = await ApiRequest.aggregate([
+      { $match: { createdAt: { $gte: startDate } } },
+      { $group: { _id: '$endpoint', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 10 }
+    ]);
 
     // Get average response time
-    const avgResponseTime = await prisma.apiRequest.aggregate({
-      {
-        createdAt: {
-          gte: startDate,
-        },
-      },
-      _avg: {
-        responseTime: true,
-      },
-    });
+    const avgResponseTime = await ApiRequest.aggregate([
+      { $match: { createdAt: { $gte: startDate } } },
+      { $group: { _id: null, avg: { $avg: '$responseTime' } } }
+    ]);
 
-    // Get total endpoints
-    const totalEndpoints = await ApiEndpoint.countDocuments();
-    const activeEndpoints = await ApiEndpoint.countDocuments({
-      { enabled: true },
-    });
+    // Get recent requests
+    const recentRequests = await ApiRequest.find({
+      createdAt: { $gte: startDate }
+    })
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .lean();
 
-    // Get recent errors (status >= 400)
-    const recentErrors = await ApiRequest.find({
-      {
-        statusCode: {
-          gte: 400,
-        },
-        createdAt: {
-          gte: startDate,
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      take: 10,
-    });
+    // Get endpoint stats
+    const endpoints = await ApiEndpoint.find({ enabled: true }).lean();
+    const endpointStats = await Promise.all(
+      endpoints.map(async (endpoint) => {
+        const count = await ApiRequest.countDocuments({
+          endpoint: endpoint.path,
+          createdAt: { $gte: startDate }
+        });
+        
+        const avgTime = await ApiRequest.aggregate([
+          { $match: { endpoint: endpoint.path, createdAt: { $gte: startDate } } },
+          { $group: { _id: null, avg: { $avg: '$responseTime' } } }
+        ]);
 
-    // Calculate success rate
-    const successfulRequests = await ApiRequest.countDocuments({
-      {
-        statusCode: {
-          lt: 400,
-        },
-        createdAt: {
-          gte: startDate,
-        },
-      },
-    });
-
-    const successRate = totalRequests > 0 
-      ? ((successfulRequests / totalRequests) * 100).toFixed(2)
-      : '0';
+        return {
+          endpoint: endpoint.path,
+          name: endpoint.name,
+          requests: count,
+          avgResponseTime: avgTime[0]?.avg || 0,
+        };
+      })
+    );
 
     return NextResponse.json({
       success: true,
       period,
-      summary: {
-        totalRequests,
-        totalEndpoints,
-        activeEndpoints,
-        successRate: parseFloat(successRate),
-        avgResponseTime: avgResponseTime._avg.responseTime || 0,
-      },
+      totalRequests,
       requestsByStatus: requestsByStatus.map(r => ({
-        statusCode: r.statusCode,
-        count: r._count.statusCode,
+        statusCode: r._id,
+        count: r.count
       })),
       requestsByEndpoint: requestsByEndpoint.map(r => ({
-        endpoint: r.endpoint,
-        count: r._count.endpoint,
+        endpoint: r._id,
+        count: r.count
       })),
-      recentErrors,
+      avgResponseTime: avgResponseTime[0]?.avg || 0,
+      recentRequests: recentRequests.map(r => ({
+        id: r._id.toString(),
+        endpoint: r.endpoint,
+        method: r.method,
+        statusCode: r.statusCode,
+        responseTime: r.responseTime,
+        ipAddress: r.ipAddress,
+        createdAt: r.createdAt,
+      })),
+      endpointStats,
     });
 
   } catch (error: any) {

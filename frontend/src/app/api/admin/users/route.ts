@@ -13,19 +13,21 @@ export async function GET() {
   }
 
   try {
-    const users = await User.find({
-      .sort({ createdAt: -1 }),
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        image: true,
-        role: true,
-        createdAt: true,
-      },
-    });
+    const users = await User.find()
+      .sort({ createdAt: -1 })
+      .select('name email image role createdAt')
+      .lean();
 
-    return NextResponse.json({ users });
+    const mapped = users.map(u => ({
+      id: u._id.toString(),
+      name: u.name,
+      email: u.email,
+      image: u.image,
+      role: u.role,
+      createdAt: u.createdAt,
+    }));
+
+    return NextResponse.json({ users: mapped });
   } catch (error: any) {
     return NextResponse.json(
       { error: 'Failed to fetch users', details: error.message },
@@ -52,10 +54,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
     }
 
-    await User.findByIdAndUpdate({
-      { id: userId },
-      data: { role },
-    });
+    await User.findByIdAndUpdate(userId, { role });
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
@@ -81,9 +80,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Missing user id' }, { status: 400 });
     }
 
-    await User.findByIdAndDelete({
-      { id },
-    });
+    await User.findByIdAndDelete(id);
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

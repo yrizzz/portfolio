@@ -13,10 +13,7 @@ export async function GET() {
     configs.forEach((c: any) => { configMap[c.key] = c.value; });
 
     // Get social links
-    const socialLinks = await SocialMedia.find({
-      { visible: true },
-      .sort({ order: 1 }),
-    });
+    const socialLinks = await SocialMedia.find({ visible: true }).sort({ order: 1 });
 
     const profile = {
       name: configMap['profile_name'] || 'YrizzzDev',
@@ -66,30 +63,27 @@ export async function POST(req: NextRequest) {
     ];
 
     for (const config of profileConfigs) {
-      await prisma.siteConfig.upsert({
+      await SiteConfig.findOneAndUpdate(
         { key: config.key },
-        update: { value: config.value, updatedAt: new Date() },
-        create: { id: crypto.randomUUID(), key: config.key, value: config.value, updatedAt: new Date() },
-      });
+        { value: config.value, updatedAt: new Date() },
+        { upsert: true, new: true }
+      );
     }
 
     // Update social links
     if (socialLinks && Array.isArray(socialLinks)) {
       // Delete existing
-      await SocialMedia.deleteMany();
+      await SocialMedia.deleteMany({});
       
       // Create new
       for (let i = 0; i < socialLinks.length; i++) {
         const link = socialLinks[i];
         await SocialMedia.create({
-          data: {
-            id: link.id || crypto.randomUUID(),
-            platform: link.platform || link.icon || '',
-            url: link.url || '',
-            icon: link.icon || link.platform?.toLowerCase() || '',
-            order: i,
-            visible: true,
-          },
+          platform: link.platform || link.icon || '',
+          url: link.url || '',
+          icon: link.icon || link.platform?.toLowerCase() || '',
+          order: i,
+          visible: true,
         });
       }
     }

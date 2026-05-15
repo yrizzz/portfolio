@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 
 // GET - List all API endpoints with filters
@@ -26,7 +25,6 @@ export async function GET(request: NextRequest) {
 
     const endpoints = await prisma.apiEndpoint.findMany({
       where,
-      orderBy: [
         { order: 'asc' },
         { createdAt: 'desc' }
       ]
@@ -103,7 +101,6 @@ export async function POST(request: NextRequest) {
     });
 
     const endpoint = await prisma.apiEndpoint.create({
-      data: {
         name,
         description: description || "",
         method: method.toUpperCase(),

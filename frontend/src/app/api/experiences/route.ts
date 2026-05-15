@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
+import { Experience } from \'@/models\';
 import { Experience, Education } from '@/models';
 
 export const dynamic = 'force-dynamic';
@@ -7,13 +8,9 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   await connectDB();
   try {
-    const experiences = await Experience.find({
-      .sort({ order: 1 }),
-    });
+    const experiences = await Experience.find().sort({ order: 1 });
 
-    const education = await Education.find({
-      .sort({ order: 1 }),
-    });
+    const education = await Education.find().sort({ order: 1 });
 
     return NextResponse.json({
       experiences: experiences.map((e: any) => ({
@@ -55,7 +52,6 @@ export async function POST(req: NextRequest) {
       for (let i = 0; i < experiences.length; i++) {
         const exp = experiences[i];
         await Experience.create({
-          data: {
             id: exp.id || crypto.randomUUID(),
             title: exp.title,
             company: exp.company,
@@ -77,7 +73,6 @@ export async function POST(req: NextRequest) {
       for (let i = 0; i < education.length; i++) {
         const edu = education[i];
         await Education.create({
-          data: {
             id: edu.id || crypto.randomUUID(),
             degree: edu.degree,
             institution: edu.institution,

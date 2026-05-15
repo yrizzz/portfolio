@@ -12,9 +12,8 @@ export async function getGeminiApiKey(): Promise<string> {
     }
     
     // Fallback to database
-    const config = await SiteConfig.findOne({
-      { key: 'GEMINI_API_KEY' },
-    });
+    await connectDB();
+    const config = await SiteConfig.findOne({ key: 'GEMINI_API_KEY' });
     
     return config?.value || '';
   } catch (error: any) {
@@ -31,9 +30,8 @@ export async function getGeminiModel(): Promise<string> {
     return cleanModelName(process.env.GEMINI_MODEL);
   }
   
-  const config = await SiteConfig.findOne({
-    { key: 'GEMINI_MODEL' },
-  });
+  await connectDB();
+  const config = await SiteConfig.findOne({ key: 'GEMINI_MODEL' });
   
   const modelName = config?.value || 'gemini-2.5-flash';
   return cleanModelName(modelName);

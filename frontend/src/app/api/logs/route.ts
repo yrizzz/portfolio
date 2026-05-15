@@ -25,13 +25,12 @@ export async function GET(req: NextRequest) {
     if (endpoint) where.endpoint = endpoint;
 
     const [logs, total] = await Promise.all([
-      ApiRequest.find({
-        where,
-        .sort({ createdAt: -1 }),
-        take: limit,
-        skip: offset,
-      }),
-      ApiRequest.countDocuments({ where }),
+      ApiRequest.find(where)
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .skip(offset)
+        .lean(),
+      ApiRequest.countDocuments(where),
     ]);
 
     return NextResponse.json({

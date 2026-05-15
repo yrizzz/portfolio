@@ -1,11 +1,14 @@
+import { connectDB } from '@/lib/mongodb';
+import { Contact } from \'@/models\';
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { connectDB } from "@/lib/prisma";
 import { applyRateLimit, requireAdmin } from "@/lib/api-middleware";
 
 export const dynamic = 'force-dynamic';
 
 // POST - Public contact form (rate limited: 5 per minute)
 export async function POST(request: NextRequest) {
+  await connectDB();
   try {
     // Rate limit: 5 messages per minute per IP
     const blocked = await applyRateLimit(request, '/api/contact', {
@@ -32,19 +35,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Field length exceeded" }, { status: 400 });
     }
 
-    const contact = await prisma.contact.create({
-      data: {
+    const contact = await Contact.create({
         name: body.name.trim(),
         email: body.email.trim().toLowerCase(),
         subject: body.subject?.trim().substring(0, 200) || null,
         message: body.message.trim(),
-      }
-    });
+      });
 
     return NextResponse.json({ 
       success: true, 
       message: "Message sent successfully",
-      id: contact.id 
+      id: Contact.id 
     });
   } catch (error) {
     console.error("Error saving contact:", error);
@@ -54,13 +55,12 @@ export async function POST(request: NextRequest) {
 
 // GET all contacts (admin only)
 export async function GET(request: NextRequest) {
+  await connectDB();
   try {
     const authResult = await requireAdmin();
     if (authResult instanceof NextResponse) return authResult;
 
-    const contacts = await prisma.contact.findMany({
-      orderBy: { createdAt: 'desc' }
-    });
+    const contacts = await Contact.findMany({);
     return NextResponse.json(contacts);
   } catch (error) {
     return NextResponse.json({ error: "Failed to fetch contacts" }, { status: 500 });

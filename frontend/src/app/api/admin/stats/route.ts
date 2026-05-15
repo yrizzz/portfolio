@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
+import { Project } from \'@/models\';
 import { User, ApiKey, ApiRequest, Project } from '@/models';
 import { auth } from "@/lib/auth";
 
@@ -15,7 +16,7 @@ export async function GET() {
   try {
     const [totalUsers, activeApiKeys, totalRequests, totalProjects] = await Promise.all([
       User.countDocuments(),
-      ApiKey.countDocuments({ { isActive: true } }),
+      ApiKey.countDocuments({ isActive: true }),
       ApiRequest.countDocuments(),
       Project.countDocuments(),
     ]);
