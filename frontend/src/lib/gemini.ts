@@ -1,4 +1,5 @@
-import { prisma } from '@/lib/prisma';
+import { connectDB } from '@/lib/mongodb';
+import { SiteConfig } from '@/models';
 
 /**
  * Get Gemini API key from environment or database
@@ -11,8 +12,8 @@ export async function getGeminiApiKey(): Promise<string> {
     }
     
     // Fallback to database
-    const config = await prisma.siteConfig.findUnique({
-      where: { key: 'GEMINI_API_KEY' },
+    const config = await SiteConfig.findOne({
+      { key: 'GEMINI_API_KEY' },
     });
     
     return config?.value || '';
@@ -30,8 +31,8 @@ export async function getGeminiModel(): Promise<string> {
     return cleanModelName(process.env.GEMINI_MODEL);
   }
   
-  const config = await prisma.siteConfig.findUnique({
-    where: { key: 'GEMINI_MODEL' },
+  const config = await SiteConfig.findOne({
+    { key: 'GEMINI_MODEL' },
   });
   
   const modelName = config?.value || 'gemini-2.5-flash';

@@ -1,19 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { connectDB } from '@/lib/mongodb';
+import { SocialMedia, SiteConfig } from '@/models';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  await connectDB();
   try {
     // Get profile from SiteConfig
-    const configs = await prisma.siteConfig.findMany();
+    const configs = await SiteConfig.find();
     const configMap: Record<string, string> = {};
     configs.forEach((c: any) => { configMap[c.key] = c.value; });
 
     // Get social links
-    const socialLinks = await prisma.socialMedia.findMany({
-      where: { visible: true },
-      orderBy: { order: 'asc' },
+    const socialLinks = await SocialMedia.find({
+      { visible: true },
+      .sort({ order: 1 }),
     });
 
     const profile = {
@@ -45,6 +47,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  await connectDB();
   try {
     const data = await req.json();
     const { name, title, subtitle, location, bio1, bio2, avatarUrl, status, cvUrl, socialLinks } = data;
@@ -64,7 +67,7 @@ export async function POST(req: NextRequest) {
 
     for (const config of profileConfigs) {
       await prisma.siteConfig.upsert({
-        where: { key: config.key },
+        { key: config.key },
         update: { value: config.value, updatedAt: new Date() },
         create: { id: crypto.randomUUID(), key: config.key, value: config.value, updatedAt: new Date() },
       });
@@ -73,12 +76,12 @@ export async function POST(req: NextRequest) {
     // Update social links
     if (socialLinks && Array.isArray(socialLinks)) {
       // Delete existing
-      await prisma.socialMedia.deleteMany();
+      await SocialMedia.deleteMany();
       
       // Create new
       for (let i = 0; i < socialLinks.length; i++) {
         const link = socialLinks[i];
-        await prisma.socialMedia.create({
+        await SocialMedia.create({
           data: {
             id: link.id || crypto.randomUUID(),
             platform: link.platform || link.icon || '',

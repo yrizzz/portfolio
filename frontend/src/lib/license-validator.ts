@@ -1,18 +1,16 @@
-import { prisma } from '@/lib/prisma';
+import { connectDB } from '@/lib/mongodb';
+import { License, User } from '@/models';
 
 /**
  * Check if user has an active license
  */
 export async function hasActiveLicense(userId: string): Promise<boolean> {
   try {
-    const activeLicense = await prisma.license.findFirst({
-      where: {
-        userId,
-        isActive: true,
-        endDate: {
-          gte: new Date(),
-        },
-      },
+    await connectDB();
+    const activeLicense = await License.findOne({
+      userId,
+      isActive: true,
+      endDate: { $gte: new Date() },
     });
 
     return !!activeLicense;
@@ -27,18 +25,12 @@ export async function hasActiveLicense(userId: string): Promise<boolean> {
  */
 export async function getActiveLicense(userId: string) {
   try {
-    const license = await prisma.license.findFirst({
-      where: {
-        userId,
-        isActive: true,
-        endDate: {
-          gte: new Date(),
-        },
-      },
-      orderBy: {
-        endDate: 'desc',
-      },
-    });
+    await connectDB();
+    const license = await License.findOne({
+      userId,
+      isActive: true,
+      endDate: { $gte: new Date() },
+    }).sort({ endDate: -1 }).lean();
 
     return license;
   } catch (error) {
@@ -52,31 +44,19 @@ export async function getActiveLicense(userId: string) {
  */
 export async function checkAndDeactivateExpiredLicenses() {
   try {
-    const expiredLicenses = await prisma.license.findMany({
-      where: {
+    await connectDB();
+    const result = await License.updateMany(
+      {
         isActive: true,
-        endDate: {
-          lt: new Date(),
-        },
+        endDate: { $lt: new Date() },
       },
-    });
+      {
+        isActive: false,
+      }
+    );
 
-    if (expiredLicenses.length > 0) {
-      await prisma.license.updateMany({
-        where: {
-          id: {
-            in: expiredLicenses.map(l => l.id),
-          },
-        },
-        data: {
-          isActive: false,
-        },
-      });
-
-      console.log(`Deactivated ${expiredLicenses.length} expired licenses`);
-    }
-
-    return expiredLicenses.length;
+    console.log(`Deactivated ${result.modifiedCount} expired licenses`);
+    return result.modifiedCount;
   } catch (error) {
     console.error('Error checking expired licenses:', error);
     return 0;
@@ -88,23 +68,19 @@ export async function checkAndDeactivateExpiredLicenses() {
  */
 export async function processAutoRenewals() {
   try {
+    await connectDB();
     // Find licenses that need renewal (expiring in next 24 hours with autoRenew enabled)
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    const licensesToRenew = await prisma.license.findMany({
-      where: {
-        isActive: true,
-        autoRenew: true,
-        endDate: {
-          lte: tomorrow,
-          gte: new Date(),
-        },
+    const licensesToRenew = await License.find({
+      isActive: true,
+      autoRenew: true,
+      endDate: {
+        $lte: tomorrow,
+        $gte: new Date(),
       },
-      include: {
-        user: true,
-      },
-    });
+    }).lean();
 
     const renewed: string[] = [];
     const failed: string[] = [];
@@ -124,17 +100,14 @@ export async function processAutoRenewals() {
         const newEndDate = new Date(license.endDate);
         newEndDate.setDate(newEndDate.getDate() + days);
 
-        await prisma.license.update({
-          where: { id: license.id },
-          data: {
-            endDate: newEndDate,
-          },
+        await License.findByIdAndUpdate(license._id, {
+          endDate: newEndDate,
         });
 
-        renewed.push(license.id);
+        renewed.push(license._id.toString());
       } catch (error) {
-        console.error(`Failed to renew license ${license.id}:`, error);
-        failed.push(license.id);
+        console.error(`Failed to renew license ${license._id}:`, error);
+        failed.push(license._id.toString());
       }
     }
 

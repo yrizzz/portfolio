@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { connectDB } from '@/lib/mongodb';
+import { SiteConfig } from '@/models';
 
 // GET - Get site config
 export async function GET(req: NextRequest) {
+  await connectDB();
   try {
     const session = await auth();
     
@@ -19,8 +21,8 @@ export async function GET(req: NextRequest) {
 
     if (key) {
       console.log('[Config GET] Fetching config for key:', key);
-      const config = await prisma.siteConfig.findUnique({
-        where: { key },
+      const config = await SiteConfig.findOne({
+        { key },
       });
       
       console.log('[Config GET] Found config:', config ? 'Yes' : 'No');
@@ -31,7 +33,7 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const configs = await prisma.siteConfig.findMany();
+    const configs = await SiteConfig.find();
     
     return NextResponse.json({
       success: true,
@@ -49,6 +51,7 @@ export async function GET(req: NextRequest) {
 
 // POST - Create or update config
 export async function POST(req: NextRequest) {
+  await connectDB();
   try {
     const session = await auth();
     
@@ -75,7 +78,7 @@ export async function POST(req: NextRequest) {
     const cleanValue = typeof value === 'string' ? value.trim() : value;
 
     const config = await prisma.siteConfig.upsert({
-      where: { key },
+      { key },
       update: { value: cleanValue, updatedAt: new Date() },
       create: { key, value: cleanValue },
     });

@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { connectDB } from '@/lib/mongodb';
+import { Contact } from '@/models';
 import { auth } from "@/lib/auth";
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  await connectDB();
   try {
-    const messages = await prisma.contact.findMany({
-      orderBy: { createdAt: 'desc' },
+    const messages = await Contact.find({
+      .sort({ createdAt: -1 }),
     });
 
     return NextResponse.json({ messages });
@@ -20,6 +22,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  await connectDB();
   try {
     const { name, email, subject, message } = await req.json();
 
@@ -27,7 +30,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Name, email, and message are required' }, { status: 400 });
     }
 
-    const contact = await prisma.contact.create({
+    const contact = await Contact.create({
       data: { name, email, subject: subject || null, message },
     });
 
@@ -41,6 +44,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  await connectDB();
   const session = await auth();
   if (!session || session.user?.role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -53,8 +57,8 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Missing message id' }, { status: 400 });
     }
 
-    await prisma.contact.update({
-      where: { id },
+    await Contact.findByIdAndUpdate({
+      { id },
       data: { read },
     });
 
@@ -68,6 +72,7 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  await connectDB();
   const session = await auth();
   if (!session || session.user?.role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -81,8 +86,8 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Missing message id' }, { status: 400 });
     }
 
-    await prisma.contact.delete({
-      where: { id },
+    await Contact.findByIdAndDelete({
+      { id },
     });
 
     return NextResponse.json({ success: true });

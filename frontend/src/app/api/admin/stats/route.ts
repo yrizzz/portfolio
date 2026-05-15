@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { connectDB } from '@/lib/mongodb';
+import { User, ApiKey, ApiRequest, Project } from '@/models';
 import { auth } from "@/lib/auth";
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  await connectDB();
   const session = await auth();
   if (!session || session.user?.role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -12,10 +14,10 @@ export async function GET() {
 
   try {
     const [totalUsers, activeApiKeys, totalRequests, totalProjects] = await Promise.all([
-      prisma.user.count(),
-      prisma.apiKey.count({ where: { isActive: true } }),
-      prisma.apiRequest.count(),
-      prisma.project.count(),
+      User.countDocuments(),
+      ApiKey.countDocuments({ { isActive: true } }),
+      ApiRequest.countDocuments(),
+      Project.countDocuments(),
     ]);
 
     return NextResponse.json({

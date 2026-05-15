@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { connectDB } from '@/lib/mongodb';
+import { ApiEndpoint } from '@/models';
 
 // GET - Generate API documentation data
 export async function GET(request: NextRequest) {
+  await connectDB();
   try {
     const { searchParams } = new URL(request.url);
     const format = searchParams.get('format') || 'json'; // json or openapi
 
     // Fetch all approved and enabled endpoints
-    const endpoints = await prisma.apiEndpoint.findMany({
-      where: {
+    const endpoints = await ApiEndpoint.find({
+      {
         status: 'approved',
         enabled: true,
       },

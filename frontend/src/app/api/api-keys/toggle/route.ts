@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { connectDB } from '@/lib/mongodb';
+import { User, ApiKey } from '@/models';
 
 // PATCH - Toggle API key active status
 export async function PATCH(request: NextRequest) {
+  await connectDB();
   try {
     const session = await auth();
     
@@ -11,8 +13,8 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+    const user = await User.findOne({
+      { email: session.user.email },
     });
 
     if (!user) {
@@ -26,8 +28,8 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Verify ownership
-    const apiKey = await prisma.apiKey.findFirst({
-      where: { 
+    const apiKey = await ApiKey.findOne({
+      { 
         id,
         userId: user.id 
       }
@@ -37,8 +39,8 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'API key not found' }, { status: 404 });
     }
 
-    const updatedKey = await prisma.apiKey.update({
-      where: { id },
+    const updatedKey = await ApiKey.findByIdAndUpdate({
+      { id },
       data: { isActive: isActive ?? !apiKey.isActive }
     });
 

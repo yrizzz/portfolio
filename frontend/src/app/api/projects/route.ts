@@ -1,18 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { connectDB } from '@/lib/mongodb';
+import { Project } from '@/models';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const projects = await prisma.project.findMany({
-      where: { published: true },
-      orderBy: { order: 'asc' },
-    });
+    await connectDB();
+    const projects = await Project.find({ published: true }).sort({ order: 1 }).lean();
 
     // Map DB fields to frontend format
     const mapped = projects.map((p: any) => ({
-      id: p.id,
+      id: p._id.toString(),
       title: p.title,
       description: p.description,
       image: p.image || '',
@@ -35,50 +34,42 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    await connectDB();
     const data = await req.json();
 
     // Handle bulk save (from admin page)
     if (Array.isArray(data)) {
       // Delete all and recreate
-      await prisma.project.deleteMany();
+      await Project.deleteMany({});
 
-      for (let i = 0; i < data.length; i++) {
-        const p = data[i];
-        await prisma.project.create({
-          data: {
-            id: p.id || crypto.randomUUID(),
-            title: p.title,
-            description: p.description || '',
-            image: p.image || null,
-            techStack: Array.isArray(p.tags) ? p.tags.join(', ') : (p.techStack || ''),
-            demoUrl: p.liveUrl || p.demoUrl || null,
-            githubUrl: p.githubUrl || null,
-            featured: p.featured || false,
-            order: i,
-            published: true,
-            updatedAt: new Date(),
-          },
-        });
-      }
+      const projects = data.map((p, i) => ({
+        title: p.title,
+        description: p.description || '',
+        image: p.image || null,
+        techStack: Array.isArray(p.tags) ? p.tags.join(', ') : (p.techStack || ''),
+        demoUrl: p.liveUrl || p.demoUrl || null,
+        githubUrl: p.githubUrl || null,
+        featured: p.featured || false,
+        order: i,
+        published: true,
+      }));
+
+      await Project.insertMany(projects);
 
       return NextResponse.json({ success: true });
     }
 
     // Single project create
-    const project = await prisma.project.create({
-      data: {
-        id: crypto.randomUUID(),
-        title: data.title,
-        description: data.description || '',
-        image: data.image || null,
-        techStack: Array.isArray(data.tags) ? data.tags.join(', ') : (data.techStack || ''),
-        demoUrl: data.liveUrl || data.demoUrl || null,
-        githubUrl: data.githubUrl || null,
-        featured: data.featured || false,
-        order: data.order || 0,
-        published: true,
-        updatedAt: new Date(),
-      },
+    const project = await Project.create({
+      title: data.title,
+      description: data.description || '',
+      image: data.image || null,
+      techStack: Array.isArray(data.tags) ? data.tags.join(', ') : (data.techStack || ''),
+      demoUrl: data.liveUrl || data.demoUrl || null,
+      githubUrl: data.githubUrl || null,
+      featured: data.featured || false,
+      order: data.order || 0,
+      published: true,
     });
 
     return NextResponse.json({ success: true, project });

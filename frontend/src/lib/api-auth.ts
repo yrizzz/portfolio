@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { connectDB } from '@/lib/mongodb';
+import { ApiKey, User } from '@/models';
 
 export interface ApiAuthResult {
   authenticated: boolean;
@@ -14,6 +15,7 @@ export interface ApiAuthResult {
  */
 export async function validateApiKey(request: NextRequest): Promise<ApiAuthResult> {
   try {
+    await connectDB();
     const authHeader = request.headers.get('authorization');
     
     if (!authHeader) {
@@ -36,10 +38,7 @@ export async function validateApiKey(request: NextRequest): Promise<ApiAuthResul
     }
 
     // Find API key in database
-    const apiKey = await prisma.apiKey.findUnique({
-      where: { key: token },
-      include: { user: true }
-    });
+    const apiKey = await ApiKey.findOne({ key: token }).lean();
 
     if (!apiKey) {
       return {
@@ -55,16 +54,16 @@ export async function validateApiKey(request: NextRequest): Promise<ApiAuthResul
       };
     }
 
+    // Get user
+    const user = await User.findById(apiKey.userId).lean();
+
     // Update last used timestamp
-    await prisma.apiKey.update({
-      where: { id: apiKey.id },
-      data: { lastUsedAt: new Date() }
-    });
+    await ApiKey.findByIdAndUpdate(apiKey._id, { lastUsedAt: new Date() });
 
     return {
       authenticated: true,
-      apiKey,
-      user: apiKey.user
+      apiKey: { ...apiKey, id: apiKey._id.toString() },
+      user: user ? { ...user, id: user._id.toString() } : null
     };
   } catch (error) {
     console.error('Error validating API key:', error);

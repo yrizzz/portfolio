@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { connectDB } from '@/lib/mongodb';
+import { ApiEndpoint } from '@/models';
 import { GoogleGenAI } from '@google/genai';
 import { getGeminiApiKey, getGeminiModel } from '@/lib/gemini';
 
 export async function POST(req: NextRequest) {
+  await connectDB();
   try {
     const session = await auth();
     
@@ -92,7 +94,7 @@ Return ONLY valid JSON without any markdown formatting or code blocks.
     }
 
     // Create pending endpoint submission
-    const endpoint = await prisma.apiEndpoint.create({
+    const endpoint = await ApiEndpoint.create({
       data: {
         name: aiAnalysis.name || 'Unnamed API',
         description: aiAnalysis.description || '',

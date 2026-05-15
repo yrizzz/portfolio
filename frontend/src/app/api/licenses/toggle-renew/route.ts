@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { connectDB } from '@/lib/mongodb';
+import { User, License } from '@/models';
 
 // PATCH - Toggle auto-renew status
 export async function PATCH(request: NextRequest) {
+  await connectDB();
   try {
     const session = await auth();
     
@@ -11,8 +13,8 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+    const user = await User.findOne({
+      { email: session.user.email },
     });
 
     if (!user) {
@@ -26,8 +28,8 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Verify ownership
-    const license = await prisma.license.findFirst({
-      where: { 
+    const license = await License.findOne({
+      { 
         id,
         userId: user.id 
       }
@@ -37,8 +39,8 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'License not found' }, { status: 404 });
     }
 
-    const updatedLicense = await prisma.license.update({
-      where: { id },
+    const updatedLicense = await License.findByIdAndUpdate({
+      { id },
       data: { autoRenew: autoRenew ?? !license.autoRenew }
     });
 

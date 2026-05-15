@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { connectDB } from '@/lib/mongodb';
+import { SiteConfig } from '@/models';
 
 export const dynamic = 'force-dynamic';
 
 // Contact info is stored in SiteConfig with key prefix 'contact_'
 export async function GET() {
+  await connectDB();
   try {
-    const configs = await prisma.siteConfig.findMany({
-      where: { key: { startsWith: 'contact_' } },
+    const configs = await SiteConfig.find({
+      { key: { startsWith: 'contact_' } },
     });
 
     // Parse contact items from config
@@ -33,12 +35,13 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  await connectDB();
   try {
     const data = await req.json();
 
     // Store contact items as JSON in SiteConfig
     await prisma.siteConfig.upsert({
-      where: { key: 'contact_items' },
+      { key: 'contact_items' },
       update: { value: JSON.stringify(data), updatedAt: new Date() },
       create: { id: crypto.randomUUID(), key: 'contact_items', value: JSON.stringify(data), updatedAt: new Date() },
     });

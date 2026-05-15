@@ -1,18 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { connectDB } from '@/lib/mongodb';
+import { User } from '@/models';
 import { auth } from "@/lib/auth";
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  await connectDB();
   const session = await auth();
   if (!session || session.user?.role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const users = await prisma.user.findMany({
-      orderBy: { createdAt: 'desc' },
+    const users = await User.find({
+      .sort({ createdAt: -1 }),
       select: {
         id: true,
         name: true,
@@ -33,6 +35,7 @@ export async function GET() {
 }
 
 export async function PATCH(req: NextRequest) {
+  await connectDB();
   const session = await auth();
   if (!session || session.user?.role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -49,8 +52,8 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
     }
 
-    await prisma.user.update({
-      where: { id: userId },
+    await User.findByIdAndUpdate({
+      { id: userId },
       data: { role },
     });
 
@@ -64,6 +67,7 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  await connectDB();
   const session = await auth();
   if (!session || session.user?.role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -77,8 +81,8 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Missing user id' }, { status: 400 });
     }
 
-    await prisma.user.delete({
-      where: { id },
+    await User.findByIdAndDelete({
+      { id },
     });
 
     return NextResponse.json({ success: true });

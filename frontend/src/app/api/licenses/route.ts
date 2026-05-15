@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { connectDB } from '@/lib/mongodb';
+import { User, License } from '@/models';
 
 // GET - List all licenses for current user
 export async function GET(request: NextRequest) {
+  await connectDB();
   try {
     const session = await auth();
     
@@ -11,17 +13,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+    const user = await User.findOne({
+      { email: session.user.email },
     });
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const licenses = await prisma.license.findMany({
-      where: { userId: user.id },
-      orderBy: { createdAt: 'desc' },
+    const licenses = await License.find({
+      { userId: user.id },
+      .sort({ createdAt: -1 }),
     });
 
     return NextResponse.json({ licenses });
@@ -33,6 +35,7 @@ export async function GET(request: NextRequest) {
 
 // POST - Purchase new license
 export async function POST(request: NextRequest) {
+  await connectDB();
   try {
     const session = await auth();
     
@@ -40,8 +43,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+    const user = await User.findOne({
+      { email: session.user.email },
     });
 
     if (!user) {
@@ -69,7 +72,7 @@ export async function POST(request: NextRequest) {
     // TODO: Integrate with payment gateway (Stripe, PayPal, etc.)
     // For now, we'll create the license directly (demo mode)
 
-    const license = await prisma.license.create({
+    const license = await License.create({
       data: {
         userId: user.id,
         type,
@@ -93,6 +96,7 @@ export async function POST(request: NextRequest) {
 
 // DELETE - Cancel license
 export async function DELETE(request: NextRequest) {
+  await connectDB();
   try {
     const session = await auth();
     
@@ -100,8 +104,8 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+    const user = await User.findOne({
+      { email: session.user.email },
     });
 
     if (!user) {
@@ -116,8 +120,8 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Verify ownership
-    const license = await prisma.license.findFirst({
-      where: { 
+    const license = await License.findOne({
+      { 
         id: licenseId,
         userId: user.id 
       }
@@ -128,8 +132,8 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Deactivate license instead of deleting
-    await prisma.license.update({
-      where: { id: licenseId },
+    await License.findByIdAndUpdate({
+      { id: licenseId },
       data: { 
         isActive: false,
         autoRenew: false 

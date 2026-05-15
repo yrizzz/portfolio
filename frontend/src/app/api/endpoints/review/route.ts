@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { connectDB } from '@/lib/mongodb';
+import { ApiEndpoint } from '@/models';
 
 // GET - Get pending submissions for review
 export async function GET(req: NextRequest) {
+  await connectDB();
   try {
     const session = await auth();
     
@@ -17,8 +19,8 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status') || 'pending';
 
-    const submissions = await prisma.apiEndpoint.findMany({
-      where: {
+    const submissions = await ApiEndpoint.find({
+      {
         status: status,
       },
       orderBy: {
@@ -49,6 +51,7 @@ export async function GET(req: NextRequest) {
 
 // PATCH - Approve or reject a submission
 export async function PATCH(req: NextRequest) {
+  await connectDB();
   try {
     const session = await auth();
     
@@ -100,8 +103,8 @@ export async function PATCH(req: NextRequest) {
       updateData.rejectedReason = rejectedReason || 'No reason provided';
     }
 
-    const endpoint = await prisma.apiEndpoint.update({
-      where: { id },
+    const endpoint = await ApiEndpoint.findByIdAndUpdate({
+      { id },
       data: updateData,
     });
 

@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { connectDB } from '@/lib/mongodb';
+import { Skill } from '@/models';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  await connectDB();
   try {
-    const skills = await prisma.skill.findMany({
-      orderBy: { order: 'asc' },
+    const skills = await Skill.find({
+      .sort({ order: 1 }),
     });
 
     const mapped = skills.map((s: any) => ({
@@ -27,16 +29,17 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  await connectDB();
   try {
     const data = await req.json();
 
     // Handle bulk save (from admin page)
     if (Array.isArray(data)) {
-      await prisma.skill.deleteMany();
+      await Skill.deleteMany();
 
       for (let i = 0; i < data.length; i++) {
         const s = data[i];
-        await prisma.skill.create({
+        await Skill.create({
           data: {
             id: s.id || crypto.randomUUID(),
             name: s.name,
@@ -51,7 +54,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Single skill create
-    const skill = await prisma.skill.create({
+    const skill = await Skill.create({
       data: {
         id: crypto.randomUUID(),
         name: data.name,

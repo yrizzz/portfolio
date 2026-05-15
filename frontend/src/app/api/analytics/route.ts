@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { connectDB } from '@/lib/mongodb';
+import { ApiRequest, ApiEndpoint } from '@/models';
 
 // GET - Get API analytics and monitoring data
 export async function GET(req: NextRequest) {
+  await connectDB();
   try {
     const session = await auth();
     
@@ -34,8 +36,8 @@ export async function GET(req: NextRequest) {
     }
 
     // Get total requests
-    const totalRequests = await prisma.apiRequest.count({
-      where: {
+    const totalRequests = await ApiRequest.countDocuments({
+      {
         createdAt: {
           gte: startDate,
         },
@@ -45,7 +47,7 @@ export async function GET(req: NextRequest) {
     // Get requests by status code
     const requestsByStatus = await prisma.apiRequest.groupBy({
       by: ['statusCode'],
-      where: {
+      {
         createdAt: {
           gte: startDate,
         },
@@ -58,7 +60,7 @@ export async function GET(req: NextRequest) {
     // Get requests by endpoint
     const requestsByEndpoint = await prisma.apiRequest.groupBy({
       by: ['endpoint'],
-      where: {
+      {
         createdAt: {
           gte: startDate,
         },
@@ -76,7 +78,7 @@ export async function GET(req: NextRequest) {
 
     // Get average response time
     const avgResponseTime = await prisma.apiRequest.aggregate({
-      where: {
+      {
         createdAt: {
           gte: startDate,
         },
@@ -87,14 +89,14 @@ export async function GET(req: NextRequest) {
     });
 
     // Get total endpoints
-    const totalEndpoints = await prisma.apiEndpoint.count();
-    const activeEndpoints = await prisma.apiEndpoint.count({
-      where: { enabled: true },
+    const totalEndpoints = await ApiEndpoint.countDocuments();
+    const activeEndpoints = await ApiEndpoint.countDocuments({
+      { enabled: true },
     });
 
     // Get recent errors (status >= 400)
-    const recentErrors = await prisma.apiRequest.findMany({
-      where: {
+    const recentErrors = await ApiRequest.find({
+      {
         statusCode: {
           gte: 400,
         },
@@ -109,8 +111,8 @@ export async function GET(req: NextRequest) {
     });
 
     // Calculate success rate
-    const successfulRequests = await prisma.apiRequest.count({
-      where: {
+    const successfulRequests = await ApiRequest.countDocuments({
+      {
         statusCode: {
           lt: 400,
         },

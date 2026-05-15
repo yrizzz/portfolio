@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { connectDB } from '@/lib/mongodb';
+import { ApiRequest } from '@/models';
 
 // GET - Get API request logs
 export async function GET(req: NextRequest) {
+  await connectDB();
   try {
     const session = await auth();
     
@@ -23,13 +25,13 @@ export async function GET(req: NextRequest) {
     if (endpoint) where.endpoint = endpoint;
 
     const [logs, total] = await Promise.all([
-      prisma.apiRequest.findMany({
+      ApiRequest.find({
         where,
-        orderBy: { createdAt: 'desc' },
+        .sort({ createdAt: -1 }),
         take: limit,
         skip: offset,
       }),
-      prisma.apiRequest.count({ where }),
+      ApiRequest.countDocuments({ where }),
     ]);
 
     return NextResponse.json({

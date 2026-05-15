@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { connectDB } from '@/lib/mongodb';
+import { Experience, Education } from '@/models';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  await connectDB();
   try {
-    const experiences = await prisma.experience.findMany({
-      orderBy: { order: 'asc' },
+    const experiences = await Experience.find({
+      .sort({ order: 1 }),
     });
 
-    const education = await prisma.education.findMany({
-      orderBy: { order: 'asc' },
+    const education = await Education.find({
+      .sort({ order: 1 }),
     });
 
     return NextResponse.json({
@@ -41,17 +43,18 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  await connectDB();
   try {
     const data = await req.json();
     const { experiences, education } = data;
 
     // Save experiences
     if (experiences && Array.isArray(experiences)) {
-      await prisma.experience.deleteMany();
+      await Experience.deleteMany();
 
       for (let i = 0; i < experiences.length; i++) {
         const exp = experiences[i];
-        await prisma.experience.create({
+        await Experience.create({
           data: {
             id: exp.id || crypto.randomUUID(),
             title: exp.title,
@@ -69,11 +72,11 @@ export async function POST(req: NextRequest) {
 
     // Save education
     if (education && Array.isArray(education)) {
-      await prisma.education.deleteMany();
+      await Education.deleteMany();
 
       for (let i = 0; i < education.length; i++) {
         const edu = education[i];
-        await prisma.education.create({
+        await Education.create({
           data: {
             id: edu.id || crypto.randomUUID(),
             degree: edu.degree,

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { connectDB } from '@/lib/mongodb';
+import { ApiRequest, ApiEndpoint } from '@/models';
 import { checkEndpointAuth } from '@/lib/api-auth';
 import { rateLimiter, generateRateLimitKey, getRateLimitHeaders } from '@/lib/rate-limiter';
 import { executeCode } from '@/lib/code-executor';
@@ -36,6 +37,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
+  await connectDB();
   const resolvedParams = await params;
   return handleDynamicAPI(req, resolvedParams, 'GET');
 }
@@ -44,6 +46,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
+  await connectDB();
   const resolvedParams = await params;
   return handleDynamicAPI(req, resolvedParams, 'POST');
 }
@@ -52,6 +55,7 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
+  await connectDB();
   const resolvedParams = await params;
   return handleDynamicAPI(req, resolvedParams, 'PUT');
 }
@@ -60,6 +64,7 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
+  await connectDB();
   const resolvedParams = await params;
   return handleDynamicAPI(req, resolvedParams, 'DELETE');
 }
@@ -68,6 +73,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
+  await connectDB();
   const resolvedParams = await params;
   return handleDynamicAPI(req, resolvedParams, 'PATCH');
 }
@@ -163,8 +169,8 @@ async function handleDynamicAPI(
     const apiPath = '/' + (params.path?.join('/') || '');
     
     // Find the endpoint in database
-    const endpoint = await prisma.apiEndpoint.findFirst({
-      where: {
+    const endpoint = await ApiEndpoint.findOne({
+      {
         path: apiPath,
         method: method,
         enabled: true,
@@ -281,7 +287,7 @@ async function handleDynamicAPI(
     await cleanupFiles(uploadedFiles);
 
     // Log the request
-    await prisma.apiRequest.create({
+    await ApiRequest.create({
       data: {
         endpoint: apiPath,
         method: method,

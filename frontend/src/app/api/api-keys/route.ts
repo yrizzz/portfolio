@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { connectDB } from '@/lib/mongodb';
+import { User, ApiKey } from '@/models';
 import crypto from 'crypto';
 
 // GET - List all API keys for current user
 export async function GET(request: NextRequest) {
+  await connectDB();
   try {
     const session = await auth();
     
@@ -12,17 +14,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+    const user = await User.findOne({
+      { email: session.user.email },
     });
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const apiKeys = await prisma.apiKey.findMany({
-      where: { userId: user.id },
-      orderBy: { createdAt: 'desc' },
+    const apiKeys = await ApiKey.find({
+      { userId: user.id },
+      .sort({ createdAt: -1 }),
       select: {
         id: true,
         key: true,
@@ -45,6 +47,7 @@ export async function GET(request: NextRequest) {
 
 // POST - Create new API key
 export async function POST(request: NextRequest) {
+  await connectDB();
   try {
     const session = await auth();
     
@@ -52,8 +55,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+    const user = await User.findOne({
+      { email: session.user.email },
     });
 
     if (!user) {
@@ -69,7 +72,7 @@ export async function POST(request: NextRequest) {
     // Generate secure API key
     const apiKey = `pk_${crypto.randomBytes(32).toString('hex')}`;
 
-    const newApiKey = await prisma.apiKey.create({
+    const newApiKey = await ApiKey.create({
       data: {
         key: apiKey,
         name: name.trim(),
@@ -90,6 +93,7 @@ export async function POST(request: NextRequest) {
 
 // DELETE - Delete API key
 export async function DELETE(request: NextRequest) {
+  await connectDB();
   try {
     const session = await auth();
     
@@ -97,8 +101,8 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+    const user = await User.findOne({
+      { email: session.user.email },
     });
 
     if (!user) {
@@ -113,8 +117,8 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Verify ownership
-    const apiKey = await prisma.apiKey.findFirst({
-      where: { 
+    const apiKey = await ApiKey.findOne({
+      { 
         id: keyId,
         userId: user.id 
       }
@@ -124,8 +128,8 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'API key not found' }, { status: 404 });
     }
 
-    await prisma.apiKey.delete({
-      where: { id: keyId }
+    await ApiKey.findByIdAndDelete({
+      { id: keyId }
     });
 
     return NextResponse.json({ message: 'API key deleted successfully' });
