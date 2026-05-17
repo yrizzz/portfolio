@@ -15,8 +15,8 @@ export default function Home() {
       <SmoothScroll />
       <CursorEffect />
       <PortfolioLayout>
-        <div className="p-4 md:p-6">
-          <div className="space-y-6">
+        <div className="p-4 md:p-6 overflow-x-hidden">
+          <div className="space-y-6 max-w-full">
             <div id="home">
               <HeroSection />
             </div>

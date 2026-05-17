@@ -267,7 +267,7 @@ export function MeteorOverlay() {
           }
           100% {
             opacity: 0;
-            transform: translate(200px, 110vh) rotate(25deg);
+            transform: translate(150px, 110vh) rotate(25deg);
           }
         }
       `}</style>

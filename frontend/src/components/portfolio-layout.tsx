@@ -264,14 +264,12 @@ export function PortfolioLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full">
-        <ParallaxBackground />
-        <SpaceBackground />
+      <div className="flex min-h-screen w-full overflow-x-hidden">
         <AppSidebar />
-        <main className="flex-1 flex flex-col min-w-0">
+        <main className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
           {/* Header */}
           <div className="sticky top-0 z-50 border-b border-gray-200/60 dark:border-white/10 bg-white/80 dark:bg-background/30 backdrop-blur-xl supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-background/20">
-            <div className="flex h-14 items-center justify-between px-4">
+            <div className="flex h-14 items-center justify-between px-4 max-w-full">
               <div className="flex items-center gap-4">
                 <SidebarTrigger />
                 <h1 className="text-lg font-semibold bg-gradient-to-r from-[#0d47c4] to-[#3b82f6] bg-clip-text text-transparent">
