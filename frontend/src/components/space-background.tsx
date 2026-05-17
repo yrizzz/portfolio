@@ -9,10 +9,11 @@ function Stars() {
   const ref = useRef<THREE.Points>(null);
   
   const [positions, colors] = useMemo(() => {
-    const positions = new Float32Array(8000 * 3);
-    const colors = new Float32Array(8000 * 3);
+    const particleCount = typeof window !== 'undefined' && window.matchMedia("(max-width: 768px)").matches ? 1500 : 2500;
+    const positions = new Float32Array(particleCount * 3);
+    const colors = new Float32Array(particleCount * 3);
     
-    for (let i = 0; i < 8000; i++) {
+    for (let i = 0; i < particleCount; i++) {
       const radius = Math.random() * 50 + 8;
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(Math.random() * 2 - 1);
@@ -63,7 +64,7 @@ function GalaxySpiral() {
   const ref = useRef<THREE.Points>(null);
   
   const [positions, colors] = useMemo(() => {
-    const count = 5000;
+    const count = typeof window !== 'undefined' && window.matchMedia("(max-width: 768px)").matches ? 800 : 1500;
     const positions = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
     
@@ -177,6 +178,8 @@ export function SpaceBackground() {
   return (
     <div className="fixed inset-0 -z-10 hidden dark:block pointer-events-none">
       <Canvas
+        dpr={[1, 1.5]}
+        performance={{ min: 0.5 }}
         camera={{ position: [0, 0, 8], fov: 65 }}
         style={{ background: 'radial-gradient(ellipse at 30% 80%, #0a0520 0%, #050210 40%, #000000 100%)' }}
       >

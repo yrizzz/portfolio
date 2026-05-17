@@ -4,9 +4,14 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+  serverExternalPackages: [
+    'axios', 'form-data', 'sharp', 'crypto', 'path', 'fs', 'url',
+    'querystring', 'buffer', 'stream', 'util', 'zlib',
+    'node-fetch', 'cheerio', 'lodash', 'moment', 'dayjs',
+    'uuid', 'validator', 'sanitize-html', 'marked', 'csv-parse',
+    'qrcode', 'jimp', 'pdf-lib', 'qs', 'dateformat',
+    '@google/generative-ai', 'https-proxy-agent'
+  ],
   /* config options here */
   allowedDevOrigins: ['192.168.101.8'],
   

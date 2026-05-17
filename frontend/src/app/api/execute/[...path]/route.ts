@@ -293,8 +293,8 @@ async function handleDynamicAPI(
       userEmailForHeaders = authResult.user.email;
     } else if (authResult.apiKey?.userId) {
       userEmailForHeaders = authResult.apiKey.userId;
-    } else if (endpoint.createdBy) {
-      userEmailForHeaders = endpoint.createdBy;
+    } else if ((endpoint as any).createdBy) {
+      userEmailForHeaders = (endpoint as any).createdBy;
     }
     
     if (userEmailForHeaders) {

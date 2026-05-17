@@ -248,13 +248,25 @@ ${convertedCode}
 
     await writeFile(tempFile, nodeCode);
 
+    // Dynamically find correct node_modules path, especially for serverless/docker environments
+    let resolvedNodePath = join(process.cwd(), 'node_modules');
+    try {
+      const axiosPath = require.resolve('axios');
+      const nmIndex = axiosPath.lastIndexOf('node_modules');
+      if (nmIndex !== -1) {
+        resolvedNodePath = axiosPath.substring(0, nmIndex + 12);
+      }
+    } catch (e) {
+      // Fallback to process.cwd()
+    }
+
     // Execute with memory limits
     const { stdout, stderr } = await execAsync(`node --max-old-space-size=128 --max-semi-space-size=16 ${tempFile}`, {
       timeout,
       maxBuffer: 10 * 1024 * 1024,
       env: {
         ...process.env,
-        NODE_PATH: join(process.cwd(), 'node_modules'),
+        NODE_PATH: resolvedNodePath,
         NODE_OPTIONS: '--no-warnings',
       },
       cwd: tempDir,

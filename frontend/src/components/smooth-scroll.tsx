@@ -5,6 +5,15 @@ import Lenis from "lenis";
 
 export function SmoothScroll() {
   useEffect(() => {
+    // Disable Lenis on touch devices and small screens for better performance
+    const isTouchDevice = 
+      (typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0)) ||
+      window.matchMedia("(max-width: 768px)").matches;
+      
+    if (isTouchDevice) {
+      return;
+    }
+
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
