@@ -43,7 +43,11 @@ console.error(error);
                 headers: { ...headerInstagram }
             });
 
-            const id = await get_id.data.users[0].user.id;
+            if (!get_id.data.users || get_id.data.users.length === 0) {
+                return { code: 404, status: false, message: 'User not found' };
+            }
+
+            const id = get_id.data.users[0].user.id;
 
 
             let params = qs.stringify({

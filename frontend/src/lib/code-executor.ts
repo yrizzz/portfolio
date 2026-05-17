@@ -173,7 +173,19 @@ export async function executeNodeJS(code: string, params: any, timeout: number =
     }
 
     // Convert ES6 imports to CommonJS requires
-    const convertedCode = convertImportsToRequire(code);
+    let convertedCode = convertImportsToRequire(code);
+
+    // Inject absolute paths for external modules to prevent "Cannot find module" errors in spawned node process
+    const nodeModulesPath = join(process.cwd(), 'node_modules');
+    const builtInModules = ['crypto', 'path', 'fs', 'url', 'querystring', 'buffer', 'stream', 'util', 'zlib'];
+    
+    for (const mod of ALLOWED_MODULES) {
+      if (!builtInModules.includes(mod)) {
+        const regex = new RegExp(`require\\s*\\(\\s*['"]${mod}['"]\\s*\\)`, 'g');
+        const absPath = join(nodeModulesPath, mod).replace(/\\/g, '\\\\');
+        convertedCode = convertedCode.replace(regex, `require('${absPath}')`);
+      }
+    }
 
     // Debug: Log conversion for troubleshooting
     if (process.env.NODE_ENV === 'development') {

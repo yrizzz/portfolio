@@ -11,7 +11,7 @@ import { tmpdir } from 'os';
 import crypto from 'crypto';
 
 export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
+export const dynamic = 'force-dynamic'; // force turbopack rebuild
 
 // Security constants
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB max per file
