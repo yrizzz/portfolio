@@ -219,11 +219,11 @@ export default function ApisPage() {
 
         {/* Pagination */}
         {!loading && totalPages > 1 && (
-          <div className="flex items-center justify-between border-t pt-6">
-            <p className="text-sm text-muted-foreground">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t pt-6">
+            <p className="text-sm text-muted-foreground text-center sm:text-left">
               Showing {(page - 1) * 9 + 1} to {Math.min(page * 9, totalItems)} of {totalItems} APIs
             </p>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
