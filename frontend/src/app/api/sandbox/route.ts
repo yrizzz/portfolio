@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { executeCode } from "@/lib/code-executor";
+import { getAllGlobalHeaders } from "@/lib/global-headers";
 import { writeFile, unlink, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
@@ -18,6 +19,13 @@ const ALLOWED_MIME_TYPES = [
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
+    
+    console.log('[Sandbox] Session check:', {
+      hasSession: !!session,
+      hasUser: !!session?.user,
+      userEmail: session?.user?.email,
+      userRole: session?.user?.role
+    });
     
     if (!session || session.user?.role !== "ADMIN") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -99,6 +107,25 @@ export async function POST(request: NextRequest) {
         size: f.size,
         path: f.path,
       }));
+    }
+
+    // Inject global headers for the user
+    if (session.user?.email) {
+      console.log('[Sandbox] Fetching global headers for user:', session.user.email);
+      try {
+        const globalHeaders = await getAllGlobalHeaders(session.user.email);
+        console.log('[Sandbox] Global headers found:', Object.keys(globalHeaders));
+        if (Object.keys(globalHeaders).length > 0) {
+          params._globalHeaders = globalHeaders;
+          console.log('[Sandbox] Global headers injected successfully');
+        } else {
+          console.log('[Sandbox] No global headers found for user');
+        }
+      } catch (error) {
+        console.error('[Sandbox] Error fetching global headers:', error);
+      }
+    } else {
+      console.log('[Sandbox] No user email in session:', session.user);
     }
 
     // Execute using the same executor as /api/execute

@@ -118,21 +118,31 @@ function validateCode(code: string): { safe: boolean; reason?: string } {
     }
   }
 
-  // Check require statements against whitelist
-  const requireMatches = code.matchAll(/require\s*\(\s*['"]([^'"]+)['"]\s*\)/g);
-  for (const match of requireMatches) {
+  // Check for require() calls with non-allowed modules
+  const requirePattern = /require\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
+  let match;
+  while ((match = requirePattern.exec(code)) !== null) {
     const moduleName = match[1];
-    if (!moduleName.startsWith('.') && !ALLOWED_MODULES.includes(moduleName)) {
-      return { safe: false, reason: `Module "${moduleName}" is not allowed. Allowed: ${ALLOWED_MODULES.join(', ')}` };
+    
+    // Block relative imports (they won't work in sandbox)
+    if (
+      moduleName.startsWith('.') || 
+      moduleName.startsWith('/') ||
+      moduleName.startsWith('~')
+    ) {
+      return { 
+        safe: false, 
+        reason: `Relative imports like "${moduleName}" are not allowed in sandbox. Use only npm modules from the allowed list: ${ALLOWED_MODULES.join(', ')}` 
+      };
     }
-  }
-
-  // Check import statements against whitelist (before conversion)
-  const importMatches = code.matchAll(/import\s+.+\s+from\s+['"]([^'"]+)['"]/g);
-  for (const match of importMatches) {
-    const moduleName = match[1];
-    if (!moduleName.startsWith('.') && !ALLOWED_MODULES.includes(moduleName)) {
-      return { safe: false, reason: `Module "${moduleName}" is not allowed. Allowed: ${ALLOWED_MODULES.join(', ')}` };
+    
+    // Check if it's an allowed module
+    const baseModule = moduleName.split('/')[0];
+    if (!ALLOWED_MODULES.includes(baseModule)) {
+      return { 
+        safe: false, 
+        reason: `Module "${moduleName}" is not allowed. Allowed modules: ${ALLOWED_MODULES.join(', ')}` 
+      };
     }
   }
 

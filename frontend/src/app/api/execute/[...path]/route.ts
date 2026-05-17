@@ -4,6 +4,7 @@ import { ApiRequest, ApiEndpoint } from '@/models';
 import { checkEndpointAuth } from '@/lib/api-auth';
 import { rateLimiter, generateRateLimitKey, getRateLimitHeaders } from '@/lib/rate-limiter';
 import { executeCode } from '@/lib/code-executor';
+import { getAllGlobalHeaders } from '@/lib/global-headers';
 import { writeFile, unlink, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
@@ -271,6 +272,30 @@ async function handleDynamicAPI(
         size: f.size,
         path: f.tempPath,
       }));
+    }
+
+    // Inject global headers for the user
+    // Priority: 1. Authenticated user, 2. API key owner, 3. Endpoint creator
+    let userEmailForHeaders = null;
+    
+    if (authResult.user?.email) {
+      userEmailForHeaders = authResult.user.email;
+    } else if (authResult.apiKey?.userId) {
+      userEmailForHeaders = authResult.apiKey.userId;
+    } else if (endpoint.createdBy) {
+      userEmailForHeaders = endpoint.createdBy;
+    }
+    
+    if (userEmailForHeaders) {
+      try {
+        const globalHeaders = await getAllGlobalHeaders(userEmailForHeaders);
+        if (Object.keys(globalHeaders).length > 0) {
+          requestParams._globalHeaders = globalHeaders;
+        }
+      } catch (error) {
+        console.error('[Execute] Failed to get global headers:', error);
+        // Continue without global headers
+      }
     }
 
     // Execute the code based on language

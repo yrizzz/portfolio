@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Play, Edit, Trash2, X, Code2, Globe, Clock, CheckCircle2, XCircle, AlertCircle, Plus } from 'lucide-react';
+import { Play, Edit, Trash2, X, Code2, Globe, Clock, CheckCircle2, XCircle, AlertCircle, Plus, Copy, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { GlowCard } from '@/components/ui/glow-card';
 import { AnimatedButton, AnimatedIconButton } from '@/components/ui/animated-button';
+import { PrettyPrint } from '@/components/ui/pretty-print';
 import { toast } from 'sonner';
 
 export default function APIsPage() {
@@ -31,6 +32,7 @@ export default function APIsPage() {
   const [newParamKey, setNewParamKey] = useState('');
   const [newParamValue, setNewParamValue] = useState('');
   const [newParamType, setNewParamType] = useState<'text' | 'file'>('text');
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     fetchAPIs();
@@ -649,6 +651,17 @@ export default function APIsPage() {
                       {testResult.executionTime !== undefined && (
                         <span className="text-[11px] text-muted-foreground font-mono">{testResult.executionTime}ms</span>
                       )}
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(JSON.stringify(testResult, null, 2));
+                          setCopied(true);
+                          toast.success('Copied to clipboard');
+                          setTimeout(() => setCopied(false), 2000);
+                        }}
+                        className="text-[11px] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                      >
+                        {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                      </button>
                     </div>
                   )}
                 </div>
@@ -657,16 +670,9 @@ export default function APIsPage() {
                   <div className="space-y-2">
                     {/* Success Output */}
                     {testResult.result?.success && testResult.result?.output && (
-                      <pre 
-                        className="text-xs bg-slate-950 text-slate-200 p-4 rounded-xl overflow-auto max-h-[250px] font-mono whitespace-pre-wrap break-all border border-slate-800/50 leading-relaxed"
-                        dangerouslySetInnerHTML={{
-                          __html: JSON.stringify(testResult.result.output, null, 2)
-                            .replace(
-                              /(https?:\/\/[^\s"',}\]]+)/g,
-                              '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:text-blue-300 underline underline-offset-2">$1</a>'
-                            )
-                        }}
-                      />
+                      <div className="bg-slate-950 p-4 rounded-xl overflow-auto max-h-[400px] border border-slate-800/50">
+                        <PrettyPrint data={testResult.result.output} />
+                      </div>
                     )}
 
                     {/* Error */}

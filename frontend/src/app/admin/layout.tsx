@@ -17,7 +17,8 @@ import {
   Moon,
   Sun,
   LogOut,
-  Terminal
+  Terminal,
+  Globe
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import {
@@ -61,6 +62,7 @@ const apiManagementNav = [
   { title: "Create API", href: "/admin/api-create" },
   { title: "Submit Script", href: "/admin/api-submit" },
   { title: "Review Queue", href: "/admin/api-review" },
+  { title: "Global Headers", href: "/admin/global-headers" },
   { title: "Monitoring", href: "/admin/api-monitoring" },
   { title: "API Logs", href: "/admin/api-logs" },
   { title: "Settings", href: "/admin/api-settings" },

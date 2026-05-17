@@ -15,6 +15,7 @@ export { Session } from './Session';
 export { VerificationToken } from './VerificationToken';
 export { Contact } from './Contact';
 export { ApiEndpoint } from './ApiEndpoint';
+export { GlobalHeader } from './GlobalHeader';
 
 // Export types
 export type { IUser } from './User';
@@ -33,3 +34,4 @@ export type { ISession } from './Session';
 export type { IVerificationToken } from './VerificationToken';
 export type { IContact } from './Contact';
 export type { IApiEndpoint } from './ApiEndpoint';
+export type { IGlobalHeader } from './GlobalHeader';
