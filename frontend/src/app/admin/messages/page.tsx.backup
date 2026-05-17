@@ -111,37 +111,6 @@ export default function MessagesPage() {
     }
   };
 
-  const handleDeleteReply = async (messageId: string, replyId: string) => {
-    if (!confirm('Delete this reply?')) return;
-
-    try {
-      const res = await fetch(`/api/messages/delete-reply?messageId=${messageId}&replyId=${replyId}`, {
-        method: 'DELETE',
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        toast.success('Reply deleted');
-        fetchMessages();
-        // Update selected message
-        if (selectedMessage?.id === messageId) {
-          const updatedMsg = {
-            ...selectedMessage,
-            replies: selectedMessage.replies?.filter((r: any) => r.id !== replyId) || []
-          };
-          setSelectedMessage(updatedMsg);
-        }
-      } else {
-        console.error('[Delete Reply] Error:', data);
-        toast.error(data.error || 'Failed to delete reply');
-      }
-    } catch (error) {
-      console.error('[Delete Reply] Exception:', error);
-      toast.error('Error deleting reply');
-    }
-  };
-
   const handleMarkAsRead = async (id: string) => {
     try {
       const res = await fetch('/api/messages', {
@@ -200,7 +169,7 @@ export default function MessagesPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Messages</h2>
-          <p className="text-muted-foreground mt-1">Manage guestroom messages and replies</p>
+          <p className="text-muted-foreground mt-1">Manage guestbook messages and replies</p>
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="secondary" className="gap-1">
@@ -389,59 +358,15 @@ export default function MessagesPage() {
                 </div>
               </div>
 
-              {/* Replies Thread */}
-              {selectedMessage.replies && selectedMessage.replies.length > 0 && (
+              {/* Previous Reply */}
+              {selectedMessage.replied && selectedMessage.replyMessage && (
                 <div className="mb-6">
-                  <p className="text-xs text-muted-foreground mb-3 flex items-center gap-1">
+                  <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
                     <Reply className="h-3 w-3" />
-                    Conversation ({selectedMessage.replies.length} {selectedMessage.replies.length === 1 ? 'reply' : 'replies'})
+                    Your Reply
                   </p>
-                  <div className="space-y-3">
-                    {selectedMessage.replies.map((reply: any, index: number) => (
-                      <div
-                        key={reply.id || index}
-                        className={`rounded-lg p-4 ${
-                          reply.isAdmin
-                            ? 'bg-primary/5 border-l-4 border-primary'
-                            : 'bg-muted/50 border-l-4 border-muted'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold ${
-                              reply.isAdmin
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-muted-foreground/20 text-foreground'
-                            }`}>
-                              {reply.name.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium flex items-center gap-2">
-                                {reply.name}
-                                {reply.isAdmin && (
-                                  <Badge variant="default" className="h-5 text-[10px] px-1.5">
-                                    Admin
-                                  </Badge>
-                                )}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {new Date(reply.createdAt).toLocaleString()}
-                              </p>
-                            </div>
-                          </div>
-                          <AnimatedButton
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteReply(selectedMessage.id, reply.id)}
-                            hoverScale={1.05}
-                            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </AnimatedButton>
-                        </div>
-                        <p className="text-sm whitespace-pre-wrap">{reply.message}</p>
-                      </div>
-                    ))}
+                  <div className="bg-primary/5 border-l-4 border-primary rounded-lg p-4">
+                    <p className="text-sm whitespace-pre-wrap">{selectedMessage.replyMessage}</p>
                   </div>
                 </div>
               )}

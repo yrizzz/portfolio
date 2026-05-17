@@ -56,14 +56,14 @@ export function ExperienceSection() {
       </FadeInOnScroll>
 
       <div className="relative ml-0 space-y-8 py-2 mt-8">
-        {/* Continuous Timeline Line */}
-        <div className="absolute left-[11px] sm:left-[13px] top-0 bottom-0 w-[2px] bg-gradient-to-b from-[#136bfe] via-[#136bfe] to-[#136bfe]/30" />
+        {/* Continuous Timeline Line - Centered */}
+        <div className="absolute left-[12px] top-0 bottom-0 w-[2px] bg-gradient-to-b from-[#136bfe] via-[#136bfe] to-[#136bfe]/30" />
         
         <StaggerContainer className="space-y-8">
           {experiences.map((exp, index) => (
             <StaggerItem key={exp.id} className="relative pl-8 sm:pl-10">
-              {/* Timeline Dot */}
-              <div className="absolute left-0 top-0 flex items-center justify-center z-10">
+              {/* Timeline Dot - Centered vertically on card and aligned with line */}
+              <div className="absolute left-[11px] sm:left-[13px] top-1/2 -translate-y-1/2 -translate-x-1/2 flex items-center justify-center z-10">
                 <div className="relative">
                   <div className="h-6 w-6 rounded-full bg-[#136bfe] flex items-center justify-center ring-4 ring-background">
                     <div className="h-2 w-2 rounded-full bg-white" />
@@ -120,8 +120,8 @@ export function ExperienceSection() {
             <StaggerContainer className="space-y-8">
               {education.map((edu, index) => (
                 <StaggerItem key={edu.id} className="relative pl-8 sm:pl-10">
-                  {/* Timeline Dot */}
-                  <div className="absolute left-0 top-0 flex items-center justify-center z-10">
+                  {/* Timeline Dot - Centered vertically on card and aligned with line */}
+                  <div className="absolute left-[11px] sm:left-[13px] top-1/2 -translate-y-1/2 -translate-x-1/2 flex items-center justify-center z-10">
                     <div className="h-6 w-6 rounded-full bg-[#136bfe] flex items-center justify-center ring-4 ring-background">
                       <div className="h-2 w-2 rounded-full bg-white" />
                     </div>

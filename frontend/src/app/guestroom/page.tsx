@@ -1,12 +1,12 @@
 import { PortfolioLayout } from "@/components/portfolio-layout";
-import { WalineGuestbook } from "@/components/waline-guestbook";
+import { CustomGuestroom } from "@/components/custom-guestroom";
 
-export default function GuestbookPage() {
+export default function GuestroomPage() {
   return (
     <PortfolioLayout>
       <div className="space-y-16 p-6 flex-1">
-        <div id="guestbook" className="max-w-5xl mx-auto w-full">
-          <WalineGuestbook />
+        <div id="guestroom" className="max-w-5xl mx-auto w-full">
+          <CustomGuestroom />
         </div>
       </div>
     </PortfolioLayout>

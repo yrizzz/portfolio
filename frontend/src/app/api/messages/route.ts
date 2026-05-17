@@ -42,7 +42,32 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const contact = await Contact.create({ name, email, subject: subject || null, message });
+    // Get IP address for spam prevention
+    const ipAddress = req.headers.get('x-forwarded-for') || 
+                      req.headers.get('x-real-ip') || 
+                      'unknown';
+
+    // Check for spam - max 3 messages per IP per hour
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const recentMessages = await Contact.countDocuments({
+      ipAddress,
+      createdAt: { $gte: oneHourAgo }
+    });
+
+    if (recentMessages >= 3) {
+      return NextResponse.json(
+        { success: false, error: 'Too many messages. Please try again later.' },
+        { status: 429 }
+      );
+    }
+
+    const contact = await Contact.create({ 
+      name, 
+      email, 
+      subject: subject || null, 
+      message,
+      ipAddress 
+    });
 
     return NextResponse.json({
       success: true,
@@ -70,13 +95,27 @@ export async function PATCH(req: NextRequest) {
   }
 
   try {
-    const { id, read } = await req.json();
+    const { id, read, replyMessage } = await req.json();
 
     if (!id) {
       return NextResponse.json({ error: 'Missing message id' }, { status: 400 });
     }
 
-    await Contact.findByIdAndUpdate(id, { read });
+    const updateData: any = {};
+    
+    // Update read status
+    if (read !== undefined) {
+      updateData.read = read;
+    }
+    
+    // Update reply
+    if (replyMessage !== undefined) {
+      updateData.replyMessage = replyMessage;
+      updateData.replied = true;
+      updateData.repliedAt = new Date();
+    }
+
+    await Contact.findByIdAndUpdate(id, updateData);
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

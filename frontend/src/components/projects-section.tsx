@@ -24,10 +24,10 @@ interface Project {
 
 function ProjectCard({ project, index }: { project: Project; index: number }) {
   return (
-    <GlowCard hoverScale={1.02}>
-      <div className="flex flex-col">
+    <GlowCard hoverScale={1.02} className="h-full">
+      <div className="flex flex-col h-full">
         {/* Image - Full width di atas */}
-        <div className="relative w-full h-56 rounded-t-xl overflow-hidden group">
+        <div className="relative w-full h-56 rounded-t-xl overflow-hidden group flex-shrink-0">
           <img
             src={project.image}
             alt={project.title}
@@ -44,21 +44,21 @@ function ProjectCard({ project, index }: { project: Project; index: number }) {
         </div>
 
         {/* Content */}
-        <div className="p-5 flex flex-col gap-3">
+        <div className="p-5 flex flex-col gap-3 flex-1">
           <h3 className="font-semibold text-lg">
             {project.title}
           </h3>
           <p className="text-sm text-muted-foreground line-clamp-2">
             {project.description}
           </p>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-1.5 flex-1">
             {project.tags.map((tag) => (
-              <Badge key={tag} variant="outline" className="text-xs">
+              <Badge key={tag} variant="outline" className="text-xs h-fit">
                 {tag}
               </Badge>
             ))}
           </div>
-          <AnimatedButtonGroup className="mt-2">
+          <AnimatedButtonGroup className="mt-auto">
             <AnimatedButton
               size="sm"
               className="flex-1"

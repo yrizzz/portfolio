@@ -128,21 +128,23 @@ export function ParallaxBackground() {
       {/* Shooting stars - above everything */}
       <div ref={shootingStarsRef} className="fixed inset-0 z-[9999] pointer-events-none overflow-hidden" />
 
-      {/* Moon - dark mode */}
-      <div ref={moonRef} className="fixed top-0 left-0 z-[-1] pointer-events-none opacity-0 hidden dark:block" style={{ width: '60px', height: '60px' }}>
-        <div className="relative w-full h-full">
-          <div className="absolute -inset-[150px] rounded-full blur-2xl" 
-               style={{ background: 'radial-gradient(circle, rgba(180,200,240,0.18) 0%, rgba(140,170,220,0.08) 30%, rgba(100,140,200,0.03) 50%, transparent 70%)' }} />
-          <div className="absolute -inset-[60px] rounded-full blur-xl"
-               style={{ background: 'radial-gradient(circle, rgba(200,215,245,0.3) 0%, rgba(160,185,230,0.12) 40%, transparent 70%)' }} />
-          <div className="absolute -inset-[20px] rounded-full blur-md"
-               style={{ background: 'radial-gradient(circle, rgba(220,230,255,0.45) 0%, rgba(180,200,240,0.2) 50%, transparent 75%)' }} />
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300 shadow-[0_0_15px_5px_rgba(200,215,240,0.5),0_0_40px_15px_rgba(160,185,230,0.25),0_0_80px_30px_rgba(120,150,210,0.1)]" />
-          <div className="absolute top-[20%] left-[25%] w-[18%] h-[18%] rounded-full bg-gray-300/50" />
-          <div className="absolute top-[45%] left-[55%] w-[22%] h-[22%] rounded-full bg-gray-300/40" />
-          <div className="absolute top-[65%] left-[30%] w-[14%] h-[14%] rounded-full bg-gray-300/30" />
-          <div className="absolute top-[30%] left-[60%] w-[10%] h-[10%] rounded-full bg-gray-300/40" />
-          <div className="absolute inset-0 rounded-full shadow-[inset_-8px_-4px_12px_rgba(0,0,0,0.2)]" />
+      {/* Moon - dark mode - wrapped in overflow container */}
+      <div className="fixed inset-0 z-[-1] pointer-events-none overflow-hidden">
+        <div ref={moonRef} className="fixed top-0 left-0 pointer-events-none opacity-0 hidden dark:block" style={{ width: '60px', height: '60px' }}>
+          <div className="relative w-full h-full">
+            <div className="absolute -inset-[150px] rounded-full blur-2xl" 
+                 style={{ background: 'radial-gradient(circle, rgba(180,200,240,0.18) 0%, rgba(140,170,220,0.08) 30%, rgba(100,140,200,0.03) 50%, transparent 70%)' }} />
+            <div className="absolute -inset-[60px] rounded-full blur-xl"
+                 style={{ background: 'radial-gradient(circle, rgba(200,215,245,0.3) 0%, rgba(160,185,230,0.12) 40%, transparent 70%)' }} />
+            <div className="absolute -inset-[20px] rounded-full blur-md"
+                 style={{ background: 'radial-gradient(circle, rgba(220,230,255,0.45) 0%, rgba(180,200,240,0.2) 50%, transparent 75%)' }} />
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300 shadow-[0_0_15px_5px_rgba(200,215,240,0.5),0_0_40px_15px_rgba(160,185,230,0.25),0_0_80px_30px_rgba(120,150,210,0.1)]" />
+            <div className="absolute top-[20%] left-[25%] w-[18%] h-[18%] rounded-full bg-gray-300/50" />
+            <div className="absolute top-[45%] left-[55%] w-[22%] h-[22%] rounded-full bg-gray-300/40" />
+            <div className="absolute top-[65%] left-[30%] w-[14%] h-[14%] rounded-full bg-gray-300/30" />
+            <div className="absolute top-[30%] left-[60%] w-[10%] h-[10%] rounded-full bg-gray-300/40" />
+            <div className="absolute inset-0 rounded-full shadow-[inset_-8px_-4px_12px_rgba(0,0,0,0.2)]" />
+          </div>
         </div>
       </div>
     </>

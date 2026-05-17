@@ -75,7 +75,41 @@ export default function ExperiencePage() {
     try {
       const response = await fetch('/api/experiences');
       const result = await response.json();
-      setData(result);
+      
+      console.log('[Experience Load] Raw data:', result);
+      
+      // Helper to parse period if dates are missing
+      const parsePeriod = (period: string) => {
+        if (!period) return { start: '', end: '' };
+        const [start, end] = period.split(' - ').map(s => s.trim());
+        return { 
+          start: start || '', 
+          end: end === 'Present' ? null : (end || '') 
+        };
+      };
+      
+      // Ensure startDate and endDate exist, parse from period if needed
+      const processedData = {
+        experiences: (result.experiences || []).map((exp: any) => {
+          const parsed = parsePeriod(exp.period);
+          return {
+            ...exp,
+            startDate: exp.startDate || parsed.start,
+            endDate: exp.endDate !== undefined ? exp.endDate : parsed.end,
+          };
+        }),
+        education: (result.education || []).map((edu: any) => {
+          const parsed = parsePeriod(edu.period);
+          return {
+            ...edu,
+            startDate: edu.startDate || parsed.start,
+            endDate: edu.endDate || parsed.end,
+          };
+        }),
+      };
+      
+      console.log('[Experience Load] Processed data:', processedData);
+      setData(processedData);
     } catch (error) {
       console.error('Failed to load:', error);
       toast.error('Failed to load data');
@@ -87,6 +121,16 @@ export default function ExperiencePage() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      // Validate data before sending
+      const hasInvalidDates = data.experiences.some(exp => !exp.startDate) || 
+                              data.education.some(edu => !edu.startDate);
+      
+      if (hasInvalidDates) {
+        console.warn('[Experience Save] Some items missing startDate!');
+      }
+      
+      console.log('[Experience Save] Data being sent:', JSON.stringify(data, null, 2));
+      
       const response = await fetch('/api/experiences', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -97,10 +141,14 @@ export default function ExperiencePage() {
         toast.success("Saved successfully!");
         loadData();
       } else {
-        toast.error("Failed to save");
+        const error = await response.json();
+        console.error('[Experience Save] Error response:', error);
+        console.error('[Experience Save] Status:', response.status);
+        toast.error(`Failed to save: ${error.details || error.error || 'Unknown error'}`);
       }
     } catch (error) {
-      toast.error("Failed to save");
+      console.error('[Experience Save] Exception:', error);
+      toast.error(`Failed to save: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSaving(false);
     }

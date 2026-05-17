@@ -5,6 +5,8 @@ export interface IEducation extends Document {
   degree: string;
   institution: string;
   location: string;
+  startDate: string;
+  endDate: string;
   period: string;
   order: number;
   createdAt: Date;
@@ -24,6 +26,14 @@ const EducationSchema = new Schema<IEducation>(
     location: {
       type: String,
       required: true,
+    },
+    startDate: {
+      type: String,
+      required: false,
+    },
+    endDate: {
+      type: String,
+      required: false,
     },
     period: {
       type: String,

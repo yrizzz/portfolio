@@ -37,7 +37,7 @@ const mainNav = [
 
 const pageNav = [
   { title: "Activity", icon: Zap, href: "/activity" },
-  { title: "Guestbook", icon: BookOpen, href: "/guestbook" },
+  { title: "Guestroom", icon: BookOpen, href: "/guestroom" },
 ];
 
 export function AppSidebar() {
@@ -49,7 +49,7 @@ export function AppSidebar() {
   // Track active section based on pathname
   React.useEffect(() => {
     if (pathname === "/activity") setActiveSection("/activity");
-    else if (pathname === "/guestbook") setActiveSection("/guestbook");
+    else if (pathname === "/guestroom") setActiveSection("/guestroom");
     else if (pathname === "/") setActiveSection("/#home");
   }, [pathname]);
 

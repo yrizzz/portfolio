@@ -8,7 +8,7 @@ import { GlowCard } from "@/components/ui/glow-card";
 import { FadeInOnScroll } from "@/components/scroll-animations";
 import { MessageSquare } from "lucide-react";
 
-export const WalineGuestbook = () => {
+export const WalineGuestroom = () => {
   const walineInstanceRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { theme } = useTheme();
@@ -46,7 +46,7 @@ export const WalineGuestbook = () => {
         <div className="space-y-2">
           <h2 className="text-3xl font-bold bg-gradient-to-r from-[#0d47c4] via-[#136bfe] to-[#3b82f6] bg-clip-text text-transparent flex items-center gap-2">
             <MessageSquare className="h-6 w-6 text-[#136bfe]" />
-            Guestbook
+            Guestroom
           </h2>
           <p className="text-sm text-muted-foreground">
             Feel free to leave a comment below! Note: Server URL needs to be updated.
