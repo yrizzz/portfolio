@@ -6,17 +6,15 @@ import { ExperienceSection } from "@/components/experience-section";
 import { ContactSection } from "@/components/contact-section";
 import { CursorEffect } from "@/components/cursor-effect";
 import { SmoothScroll } from "@/components/smooth-scroll";
-import { SpaceBackground } from "@/components/space-background";
 
 export default function Home() {
   return (
     <>
-      <SpaceBackground />
       <SmoothScroll />
       <CursorEffect />
       <PortfolioLayout>
-        <div className="p-4 md:p-6 overflow-x-hidden">
-          <div className="space-y-6 max-w-full">
+        <div className="p-4 md:p-6">
+          <div className="space-y-6">
             <div id="home">
               <HeroSection />
             </div>

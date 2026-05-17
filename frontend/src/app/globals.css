@@ -122,15 +122,25 @@
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-    overflow-x: hidden;
-  }
   html {
     @apply font-sans scroll-smooth;
     scroll-behavior: smooth;
-    overflow-x: hidden;
+    /* clip instead of hidden — does NOT create a scroll container */
+    overflow-x: clip;
   }
+  body {
+    @apply bg-background text-foreground;
+    overflow-x: clip;
+  }
+}
+
+/* Hide scrollbar but keep scroll functionality */
+.no-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Opera */
 }
 
 /* Aurora background effect - enhanced */

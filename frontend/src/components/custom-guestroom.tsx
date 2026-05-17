@@ -261,7 +261,7 @@ export function CustomGuestroom() {
             <div className="space-y-4">
               {messages.map((msg) => (
                 <GlowCard key={msg._id} hoverScale={1.01}>
-                  <div className="p-5 space-y-4">
+                  <div className="p-5 space-y-4 overflow-hidden">
                     {/* Main Message */}
                     <div className="flex gap-3">
                       <div className="flex-shrink-0">
@@ -298,7 +298,7 @@ export function CustomGuestroom() {
 
                     {/* Replies Thread */}
                     {msg.replies && msg.replies.length > 0 && (
-                      <div className="ml-12 space-y-3 border-l-2 border-border pl-4">
+                      <div className="ml-8 md:ml-12 space-y-3 border-l-2 border-border pl-4">
                         {msg.replies.map((reply, idx) => (
                           <div key={idx} className="flex gap-3">
                             <div className="flex-shrink-0">
@@ -333,7 +333,7 @@ export function CustomGuestroom() {
 
                     {/* Reply Form */}
                     {replyingTo === msg._id && (
-                      <div className="ml-12 mt-4 space-y-3 border-l-2 border-[#136bfe] pl-4">
+                      <div className="ml-8 md:ml-12 mt-4 space-y-3 border-l-2 border-[#136bfe] pl-4 max-w-full">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <Input
                             placeholder="Your name"

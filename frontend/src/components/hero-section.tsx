@@ -86,7 +86,7 @@ export function HeroSection() {
   };
 
   return (
-    <section className="relative flex items-center justify-center py-8 lg:py-0 lg:h-[calc(100vh-3.5rem)] overflow-hidden">
+    <section className="relative flex items-center justify-center py-8 lg:py-0 lg:h-[calc(100vh-3.5rem)]">
       <div className="max-w-7xl mx-auto w-full lg:-mt-16 px-4">
         {/* Free Palestine Banner */}
         <div className="mb-4 lg:mb-8 flex justify-center animate-in fade-in slide-in-from-top-4 duration-700">

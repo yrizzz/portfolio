@@ -14,16 +14,21 @@ export function SmoothScroll() {
       wheelMultiplier: 1,
       touchMultiplier: 2,
       infinite: false,
+      // Prevent Lenis from adding overflow:hidden to html during init
+      prevent: (node) => node.id === "modal-root" || node.dataset.lenisPrevent === "true",
     });
+
+    let rafId: number;
 
     function raf(time: number) {
       lenis.raf(time);
-      requestAnimationFrame(raf);
+      rafId = requestAnimationFrame(raf);
     }
 
-    requestAnimationFrame(raf);
+    rafId = requestAnimationFrame(raf);
 
     return () => {
+      cancelAnimationFrame(rafId);
       lenis.destroy();
     };
   }, []);

@@ -229,6 +229,94 @@ export function AppSidebar() {
   );
 }
 
+export function HeaderBar({
+  theme,
+  setTheme,
+  mounted,
+  session,
+  status,
+  router,
+  setLoginModalOpen,
+}: {
+  theme: string | undefined;
+  setTheme: (t: string) => void;
+  mounted: boolean;
+  session: ReturnType<typeof useSession>["data"];
+  status: string;
+  router: ReturnType<typeof useRouter>;
+  setLoginModalOpen: (v: boolean) => void;
+}) {
+  const { isMobile, state } = useSidebar();
+
+  const leftOffset = isMobile
+    ? "0px"
+    : state === "collapsed"
+    ? "var(--sidebar-width-icon)"
+    : "var(--sidebar-width)";
+
+  return (
+    <header
+      className="fixed top-0 right-0 z-50 border-b border-gray-200/60 dark:border-white/10 bg-white/80 dark:bg-background/30 backdrop-blur-xl supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-background/20 transition-[left] duration-200 ease-linear"
+      style={{ left: leftOffset }}
+    >
+      <div className="flex h-14 items-center justify-between px-4">
+        <div className="flex items-center gap-4">
+          <SidebarTrigger />
+          <h1 className="text-lg font-semibold bg-gradient-to-r from-[#0d47c4] to-[#3b82f6] bg-clip-text text-transparent">
+            Portfolio
+          </h1>
+        </div>
+        <div className="flex items-center gap-2">
+          {status === "authenticated" && (session as any)?.user?.role === "ADMIN" && (
+            <AnimatedIconButton
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push("/admin")}
+              className="rounded-lg"
+              hoverScale={1.05}
+            >
+              <span className="text-sm font-medium">Admin</span>
+            </AnimatedIconButton>
+          )}
+          {mounted && (
+            <AnimatedIconButton
+              variant="ghost"
+              size="icon"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="rounded-lg"
+              hoverScale={1.1}
+              rotateOnHover={true}
+            >
+              {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </AnimatedIconButton>
+          )}
+          {session ? (
+            <AnimatedIconButton
+              variant="ghost"
+              size="icon"
+              onClick={() => signOut()}
+              className="rounded-lg"
+              hoverScale={1.1}
+            >
+              <LogOut className="h-5 w-5" />
+            </AnimatedIconButton>
+          ) : (
+            <AnimatedIconButton
+              variant="ghost"
+              size="icon"
+              onClick={() => setLoginModalOpen(true)}
+              className="rounded-lg"
+              hoverScale={1.1}
+            >
+              <LogIn className="h-5 w-5" />
+            </AnimatedIconButton>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+}
+
 export function PortfolioLayout({ children }: { children: React.ReactNode }) {
   const { theme, setTheme } = useTheme();
   const router = useRouter();
@@ -254,88 +342,42 @@ export function PortfolioLayout({ children }: { children: React.ReactNode }) {
     }
   }, [status, session]);
 
-  const handleAuthAction = () => {
-    if (session) {
-      signOut();
-    } else {
-      setLoginModalOpen(true);
-    }
-  };
-
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full overflow-x-hidden">
+      {/* Outer wrapper — body handles overflow, no extra scroll context */}
+      <div className="flex min-h-screen w-full">
+        <ParallaxBackground />
+        <SpaceBackground />
         <AppSidebar />
-        <main className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
-          {/* Header */}
-          <div className="sticky top-0 z-50 border-b border-gray-200/60 dark:border-white/10 bg-white/80 dark:bg-background/30 backdrop-blur-xl supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-background/20">
-            <div className="flex h-14 items-center justify-between px-4 max-w-full">
-              <div className="flex items-center gap-4">
-                <SidebarTrigger />
-                <h1 className="text-lg font-semibold bg-gradient-to-r from-[#0d47c4] to-[#3b82f6] bg-clip-text text-transparent">
-                  Portfolio
-                </h1>
-              </div>
-              <div className="flex items-center gap-2">
-                {status === "authenticated" && session?.user?.role === "ADMIN" && (
-                  <AnimatedIconButton
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => router.push("/admin")}
-                    className="rounded-lg"
-                    hoverScale={1.05}
-                  >
-                    <span className="text-sm font-medium">Admin</span>
-                  </AnimatedIconButton>
-                )}
-                {mounted && (
-                  <AnimatedIconButton
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                    className="rounded-lg"
-                    hoverScale={1.1}
-                    rotateOnHover={true}
-                  >
-                    {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-                  </AnimatedIconButton>
-                )}
-                {session ? (
-                  <AnimatedIconButton
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => signOut()}
-                    className="rounded-lg"
-                    hoverScale={1.1}
-                  >
-                    <LogOut className="h-5 w-5" />
-                  </AnimatedIconButton>
-                ) : (
-                  <AnimatedIconButton
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setLoginModalOpen(true)}
-                    className="rounded-lg"
-                    hoverScale={1.1}
-                  >
-                    <LogIn className="h-5 w-5" />
-                  </AnimatedIconButton>
-                )}
-              </div>
+
+        {/* Main column: takes remaining width */}
+        <div className="flex flex-1 flex-col min-w-0">
+
+          {/* Fixed Header — always on top, left offset matches sidebar width */}
+          <HeaderBar
+            theme={theme}
+            setTheme={setTheme}
+            mounted={mounted}
+            session={session}
+            status={status}
+            router={router}
+            setLoginModalOpen={setLoginModalOpen}
+          />
+
+          {/* Page content — pt-14 compensates for fixed 56px header */}
+          <main className="flex-1 flex flex-col min-w-0 pt-14">
+            <div className="flex-1 min-w-0">
+              {children}
             </div>
-          </div>
 
-          {/* Page content */}
-          <div className="flex-1">
-            {children}
-          </div>
+            {/* Global Footer */}
+            <Footer />
+          </main>
 
-          {/* Global Footer */}
-          <Footer />
           <ScrollToTop />
-        </main>
+        </div>
       </div>
-      
+
       <LoginModal open={loginModalOpen} onOpenChange={setLoginModalOpen} />
     </SidebarProvider>
   );

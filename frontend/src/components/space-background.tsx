@@ -175,7 +175,7 @@ function GasGiant() {
 
 export function SpaceBackground() {
   return (
-    <div className="fixed inset-0 -z-10 hidden dark:block">
+    <div className="fixed inset-0 -z-10 hidden dark:block pointer-events-none">
       <Canvas
         camera={{ position: [0, 0, 8], fov: 65 }}
         style={{ background: 'radial-gradient(ellipse at 30% 80%, #0a0520 0%, #050210 40%, #000000 100%)' }}
