@@ -314,6 +314,23 @@ export default function ApiDetailPage() {
                       onChange={(e) => setUrlPath(e.target.value)}
                       className="h-12 bg-transparent border-none text-sm font-mono text-slate-700 dark:text-slate-300 focus-visible:ring-0 placeholder:text-slate-400 dark:placeholder:text-slate-600 rounded-none w-full"
                     />
+                    <Button 
+                      variant="ghost"
+                      className="h-12 w-12 rounded-none hover:bg-slate-100 dark:hover:bg-white/10 text-slate-500 hover:text-primary transition-colors border-l border-slate-100 dark:border-white/5 shrink-0"
+                      onClick={() => {
+                        let finalUrl = urlPath.startsWith("http") ? urlPath : `${window.location.origin}/api/execute${urlPath.startsWith("/") ? urlPath : `/${urlPath}`}`;
+                        if (api.method === "GET") {
+                          const params = new URLSearchParams();
+                          Object.entries(formData).forEach(([k, v]) => { if (v) params.append(k, String(v)); });
+                          const qs = params.toString();
+                          if (qs) finalUrl += (finalUrl.includes('?') ? '&' : '?') + qs;
+                        }
+                        window.open(finalUrl, '_blank');
+                      }}
+                      title="Open endpoint in new tab"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                    </Button>
                   </div>
                 </div>
               </FadeInOnScroll>
