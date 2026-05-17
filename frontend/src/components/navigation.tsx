@@ -10,6 +10,7 @@ const navItems = [
   { label: "Projects", href: "#projects" },
   { label: "About", href: "#about" },
   { label: "Experience", href: "#experience" },
+  { label: "Education", href: "#education" },
   { label: "Contact", href: "#contact" },
 ];
 
@@ -30,9 +31,22 @@ export function Navigation() {
   }, []);
 
   const scrollToSection = (href: string) => {
-    const element = document.querySelector(href);
+    const element = document.querySelector(href) as HTMLElement;
     if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
+      const navHeight = 100; // Increased offset for better spacing
+      // Use offsetTop to ignore CSS transforms (AOS bug fix)
+      let offsetPosition = 0;
+      let currentElement: HTMLElement | null = element;
+      while (currentElement) {
+        offsetPosition += currentElement.offsetTop;
+        currentElement = currentElement.offsetParent as HTMLElement;
+      }
+      offsetPosition -= navHeight;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth"
+      });
       setIsMobileMenuOpen(false);
     }
   };

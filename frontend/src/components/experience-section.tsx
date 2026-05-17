@@ -109,7 +109,7 @@ export function ExperienceSection() {
       </div>
 
       <FadeInOnScroll delay={0.3}>
-        <div className="mt-8">
+        <div id="education" className="mt-8 pt-8">
           <h2 className="mb-4 text-3xl font-bold bg-gradient-to-r from-[#0d47c4] via-[#136bfe] to-[#3b82f6] bg-clip-text text-transparent">
             Education
           </h2>

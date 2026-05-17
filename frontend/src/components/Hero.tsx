@@ -147,7 +147,7 @@ export function Hero() {
               <div className="absolute -inset-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full opacity-20 blur-2xl group-hover:opacity-30 transition-opacity" />
               
               <Avatar className="w-64 h-64 border-4 border-white dark:border-zinc-800 shadow-2xl relative">
-                <AvatarImage src="/profile.jpg" alt="Ahmad Fauzi" />
+                <AvatarImage src="" alt="Ahmad Fauzi" />
                 <AvatarFallback className="text-6xl bg-gradient-to-br from-blue-600 to-purple-600 text-white">
                   AF
                 </AvatarFallback>

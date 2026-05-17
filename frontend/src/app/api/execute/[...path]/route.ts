@@ -132,13 +132,15 @@ async function handleFileUpload(req: NextRequest): Promise<{ params: Record<stri
         
         await writeFile(tempPath, buffer);
         
-        files.push({
+        const fileObj = {
           fieldName: key,
           originalName: value.name,
           mimeType: value.type,
           size: value.size,
           tempPath,
-        });
+        };
+        files.push(fileObj);
+        params[key] = fileObj; // Also make it accessible directly!
       } else {
         // Regular form field
         params[key] = value;
@@ -272,6 +274,15 @@ async function handleDynamicAPI(
         size: f.size,
         path: f.tempPath,
       }));
+      // Also update the direct references with 'path' instead of 'tempPath'
+      for (const f of fileParams) {
+        requestParams[f.fieldName] = {
+          ...f,
+          name: f.originalName,
+          type: f.mimeType,
+          path: f.tempPath
+        };
+      }
     }
 
     // Inject global headers for the user

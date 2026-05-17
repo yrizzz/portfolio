@@ -23,7 +23,7 @@ export async function GET() {
       location: configMap['profile_location'] || 'Indonesia',
       bio1: configMap['profile_bio1'] || '',
       bio2: configMap['profile_bio2'] || '',
-      avatarUrl: configMap['profile_avatar'] || '/profile.jpg',
+      avatarUrl: configMap['profile_avatar'] || '',
       status: configMap['profile_status'] || 'Available to be partner',
       cvUrl: configMap['profile_cv'] || '',
       socialLinks: socialLinks.map((s: any) => ({

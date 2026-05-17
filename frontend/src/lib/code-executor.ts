@@ -42,7 +42,7 @@ const ALLOWED_MODULES = [
   'node-fetch', 'cheerio', 'lodash', 'moment', 'dayjs',
   'uuid', 'validator', 'sanitize-html', 'marked', 'csv-parse',
   'qrcode', 'jimp', 'pdf-lib', 'qs', 'dateformat',
-  '@google/generative-ai',
+  '@google/generative-ai', 'https-proxy-agent',
 ];
 
 /**
@@ -137,8 +137,11 @@ function validateCode(code: string): { safe: boolean; reason?: string } {
     }
     
     // Check if it's an allowed module
-    const baseModule = moduleName.split('/')[0];
-    if (!ALLOWED_MODULES.includes(baseModule)) {
+    let baseModule = moduleName.split('/')[0];
+    if (moduleName.startsWith('@')) {
+      baseModule = moduleName.split('/').slice(0, 2).join('/');
+    }
+    if (!ALLOWED_MODULES.includes(baseModule) && !ALLOWED_MODULES.includes(moduleName)) {
       return { 
         safe: false, 
         reason: `Module "${moduleName}" is not allowed. Allowed modules: ${ALLOWED_MODULES.join(', ')}` 
@@ -186,10 +189,30 @@ export async function executeNodeJS(code: string, params: any, timeout: number =
     const nodeCode = `
 const params = JSON.parse(${JSON.stringify(paramsJson)});
 
+// Add polyfills for file objects to support legacy file API
+const fs = require('fs');
+for (const key in params) {
+  if (params[key] && typeof params[key] === 'object' && params[key].path && params[key].originalName) {
+    params[key].arrayBuffer = async () => {
+      const buf = await fs.promises.readFile(params[key].path);
+      return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+    };
+  }
+}
+if (params._files) {
+  for (const file of params._files) {
+    file.arrayBuffer = async () => {
+      const buf = await fs.promises.readFile(file.path);
+      return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+    };
+  }
+}
+
 ${convertedCode}
 
+
 // Execute the exported function
-(async () => {
+;(async () => {
   let result;
   let fn = null;
   
@@ -202,6 +225,10 @@ ${convertedCode}
     fn = exports.default;
   } else if (typeof exports === 'function') {
     fn = exports;
+  } else if (module.exports && typeof module.exports.code === 'function') {
+    fn = module.exports.code;
+  } else if (module.exports.default && typeof module.exports.default.code === 'function') {
+    fn = module.exports.default.code;
   }
   
   if (!fn) {

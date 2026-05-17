@@ -50,7 +50,7 @@ const iconOptions = [
 
 export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [imagePreview, setImagePreview] = useState<string>("/profile.jpg");
+  const [imagePreview, setImagePreview] = useState<string>("");
 
   const [formData, setFormData] = useState<ProfileData>({
     name: "YrizzzDev",
@@ -59,7 +59,7 @@ export default function ProfilePage() {
     location: "Indonesia",
     bio1: "With over 5 years of professional experience, I specialize in crafting robust and scalable web applications. My expertise lies in building modern, high-performance solutions using Laravel and Livewire.",
     bio2: "From concept to deployment, I deliver end-to-end solutions that combine elegant code architecture with exceptional user experiences.",
-    avatarUrl: "/profile.jpg",
+    avatarUrl: "",
     status: "Available to be partner",
     cvUrl: "/cv.pdf",
     socialLinks: defaultSocialLinks,
@@ -189,12 +189,12 @@ export default function ProfilePage() {
       location: "Indonesia",
       bio1: "With over 5 years of professional experience, I specialize in crafting robust and scalable web applications. My expertise lies in building modern, high-performance solutions using Laravel and Livewire.",
       bio2: "From concept to deployment, I deliver end-to-end solutions that combine elegant code architecture with exceptional user experiences.",
-      avatarUrl: "/profile.jpg",
+      avatarUrl: "",
       status: "Available to be partner",
       cvUrl: "/cv.pdf",
       socialLinks: defaultSocialLinks,
     });
-    setImagePreview("/profile.jpg");
+    setImagePreview("");
     toast.info("Form reset to default values");
   };
 
@@ -234,11 +234,11 @@ export default function ProfilePage() {
                     {formData.name.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
-                {imagePreview !== "/profile.jpg" && (
+                {imagePreview !== "" && (
                   <button
                     onClick={() => {
-                      setImagePreview("/profile.jpg");
-                      setFormData(prev => ({ ...prev, avatarUrl: "/profile.jpg" }));
+                      setImagePreview("");
+                      setFormData(prev => ({ ...prev, avatarUrl: "" }));
                     }}
                     className="absolute -top-2 -right-2 p-1 rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"
                   >

@@ -34,7 +34,7 @@ export function HeroSection() {
     location: "Indonesia",
     bio1: "With over 5 years of professional experience, I specialize in crafting robust and scalable web applications. My expertise lies in building modern, high-performance solutions using Laravel and Livewire.",
     bio2: "From concept to deployment, I deliver end-to-end solutions that combine elegant code architecture with exceptional user experiences.",
-    avatarUrl: "/profile.jpg",
+    avatarUrl: "",
     status: "Available to be partner",
     cvUrl: "",
     socialLinks: [
@@ -87,7 +87,7 @@ export function HeroSection() {
 
   return (
     <section className="relative flex items-center justify-center py-8 lg:py-0 lg:h-[calc(100vh-3.5rem)]">
-      <div className="max-w-7xl mx-auto w-full lg:-mt-16 px-4">
+      <div className="max-w-7xl mx-auto w-full lg:-mt-16">
         {/* Free Palestine Banner */}
         <div className="mb-4 lg:mb-8 flex justify-center animate-in fade-in slide-in-from-top-4 duration-700">
           <div className="flex items-center gap-2 px-5 py-2.5 md:px-6 md:py-3 rounded-full bg-background/20 dark:bg-background/15 backdrop-blur-md shadow-[0_8px_32px_0_rgba(13,71,196,0.15)] dark:shadow-[0_8px_32px_0_rgba(59,130,246,0.2)] border border-white/10 dark:border-white/5 hover:scale-105 transition-transform duration-300">
@@ -103,7 +103,7 @@ export function HeroSection() {
             {/* Avatar */}
             <div className="relative group">
               <div className="absolute -inset-1 bg-gradient-to-r from-[#0d47c4] via-[#3b82f6] to-[#136bfe] rounded-full blur-lg opacity-50 group-hover:opacity-75 transition-opacity duration-500" />
-              <Avatar className="relative h-28 w-28 lg:h-40 lg:w-40 border-4 border-white/20 dark:border-white/10 shadow-2xl backdrop-blur-sm">
+              <Avatar className="relative h-40 w-40 md:h-48 md:w-48 lg:h-56 lg:w-56 border-4 border-white/20 dark:border-white/10 shadow-2xl backdrop-blur-sm">
                 <AvatarImage src={profileData.avatarUrl} alt={profileData.name} />
                 <AvatarFallback className="text-2xl lg:text-4xl font-bold bg-gradient-to-br from-[#0d47c4] to-[#3b82f6] text-white">
                   {profileData.name.substring(0, 2).toUpperCase()}
@@ -113,10 +113,10 @@ export function HeroSection() {
 
             {/* Name & Title */}
             <div className="space-y-1.5 lg:space-y-2">
-              <h1 className="text-2xl lg:text-4xl xl:text-5xl font-bold bg-gradient-to-r from-[#0d47c4] via-[#3b82f6] to-[#136bfe] bg-clip-text text-transparent">
+              <h1 className="text-3xl md:text-5xl lg:text-6xl xl:text-7xl font-bold bg-gradient-to-r from-[#0d47c4] via-[#3b82f6] to-[#136bfe] bg-clip-text text-transparent">
                 {profileData.name}
               </h1>
-              <p className="text-base lg:text-xl font-medium text-muted-foreground">
+              <p className="text-lg md:text-xl lg:text-2xl font-medium text-muted-foreground">
                 {profileData.title}
               </p>
             </div>
@@ -163,14 +163,14 @@ export function HeroSection() {
           {/* RIGHT: Bio & Actions */}
           <div className="flex flex-col gap-4 lg:gap-6 text-center lg:text-left">
             <div className="space-y-3 lg:space-y-5">
-              <h2 className="text-xl lg:text-3xl xl:text-4xl font-bold">
+              <h2 className="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold">
                 {profileData.subtitle}
               </h2>
               <div className="space-y-2.5 lg:space-y-3">
-                <p className="text-sm lg:text-lg text-muted-foreground leading-relaxed text-justify">
+                <p className="text-base lg:text-lg text-muted-foreground leading-relaxed text-justify">
                   {profileData.bio1}
                 </p>
-                <p className="text-sm lg:text-lg text-muted-foreground leading-relaxed text-justify">
+                <p className="text-base lg:text-lg text-muted-foreground leading-relaxed text-justify">
                   {profileData.bio2}
                 </p>
               </div>

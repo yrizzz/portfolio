@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { LayoutGrid, Layers, UserCircle, Send, FolderKanban, Zap, BookOpen, Moon, Sun, ExternalLink, LogIn, LogOut } from "lucide-react";
+import { LayoutGrid, Layers, UserCircle, Send, FolderKanban, Zap, BookOpen, Moon, Sun, ExternalLink, LogIn, LogOut, Server, GraduationCap } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useRouter, usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
@@ -32,12 +32,14 @@ const mainNav = [
   { title: "Projects", icon: FolderKanban, href: "/#projects" },
   { title: "Skills", icon: Layers, href: "/#about" },
   { title: "Experience", icon: Zap, href: "/#experience" },
+  { title: "Education", icon: GraduationCap, href: "/#education" },
   { title: "Contact", icon: Send, href: "/#contact" },
 ];
 
 const pageNav = [
   { title: "Activity", icon: Zap, href: "/activity" },
   { title: "Guestroom", icon: BookOpen, href: "/guestroom" },
+  { title: "APIs Directory", icon: Server, href: "/apis" },
 ];
 
 export function AppSidebar() {
@@ -58,7 +60,7 @@ export function AppSidebar() {
     if (pathname !== "/") return;
 
     const handleScroll = () => {
-      const sections = ["#home", "#projects", "#about", "#experience", "#contact"];
+      const sections = ["#home", "#projects", "#about", "#experience", "#education", "#contact"];
       const scrollPosition = window.scrollY + 150; // Offset for header
       
       // Check if scrolled to bottom
@@ -94,11 +96,17 @@ export function AppSidebar() {
       if (pathname === "/") {
         setOpenMobile(false);
         setTimeout(() => {
-          const element = document.querySelector(targetId);
+          const element = document.querySelector(targetId) as HTMLElement;
           if (element) {
-            const headerOffset = 70;
-            const elementPosition = element.getBoundingClientRect().top;
-            const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+            const headerOffset = 100;
+            // Use a loop to get absolute offsetTop ignoring CSS transforms (AOS bug fix)
+            let offsetPosition = 0;
+            let currentElement: HTMLElement | null = element;
+            while (currentElement) {
+              offsetPosition += currentElement.offsetTop;
+              currentElement = currentElement.offsetParent as HTMLElement;
+            }
+            offsetPosition -= headerOffset;
             
             window.scrollTo({
               top: offsetPosition,
@@ -335,7 +343,7 @@ export function PortfolioLayout({ children }: { children: React.ReactNode }) {
         .then(res => res.json())
         .then(data => {
           if (data.success) {
-            console.log("✅ User synced to database:", data.user);
+            // User synced successfully
           }
         })
         .catch(err => console.error("Failed to sync user:", err));

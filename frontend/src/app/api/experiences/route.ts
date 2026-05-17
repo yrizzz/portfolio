@@ -11,16 +11,6 @@ export async function GET() {
     const experiences = await Experience.find().sort({ order: 1 }).lean();
     const education = await Education.find().sort({ order: 1 }).lean();
 
-    console.log('[Experiences GET] Raw from DB:', {
-      expCount: experiences.length,
-      eduCount: education.length,
-      firstExp: experiences[0] ? {
-        title: experiences[0].title,
-        startDate: experiences[0].startDate,
-        endDate: experiences[0].endDate,
-        period: experiences[0].period,
-      } : null
-    });
 
     // Helper to parse dates from period if needed
     const parsePeriod = (period: string) => {
@@ -62,14 +52,6 @@ export async function GET() {
       }),
     };
     
-    console.log('[Experiences GET] Response:', {
-      expCount: response.experiences.length,
-      firstExp: response.experiences[0] ? {
-        title: response.experiences[0].title,
-        startDate: response.experiences[0].startDate,
-        endDate: response.experiences[0].endDate,
-      } : null
-    });
 
     return NextResponse.json(response);
     

@@ -47,7 +47,6 @@ export function ContactSection() {
     fetch('/api/contact-info')
       .then(res => res.json())
       .then(data => {
-        console.log('Contact info loaded:', data);
         if (data && data.length > 0) {
           setContactInfo(data);
         }
