@@ -75,7 +75,7 @@ async function main() {
 
     for (const { name, model } of collections) {
       try {
-        const result = await model.deleteMany({});
+        const result = await model.deleteMany({} as any);
         console.log(`✅ ${name.padEnd(20)} ${result.deletedCount} records deleted`);
         totalDeleted += result.deletedCount || 0;
       } catch (error: any) {
