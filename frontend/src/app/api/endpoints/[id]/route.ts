@@ -1,7 +1,6 @@
-import { connectDB } from '@/lib/mongodb';
-import { ApiEndpoint } from \'@/models\';
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/lib/prisma";
+import { connectDB } from '@/lib/mongodb';
+import { ApiEndpoint } from '@/models';
 import { auth } from "@/lib/auth";
 
 // GET - Get single endpoint
@@ -18,9 +17,17 @@ export async function GET(
     }
 
     const { id } = await params;
+    
+    console.log('[API GET] Received ID:', id);
 
-    const endpoint = await ApiEndpoint.findUnique({
-      where: { id });
+    if (!id || id === 'undefined') {
+      return NextResponse.json({ 
+        success: false,
+        error: "Invalid endpoint ID" 
+      }, { status: 400 });
+    }
+
+    const endpoint = await ApiEndpoint.findOne({ _id: id }).lean();
 
     if (!endpoint) {
       return NextResponse.json({ error: "Endpoint not found" }, { status: 404 });
@@ -29,8 +36,9 @@ export async function GET(
     // Parse JSON fields
     const endpointWithParsed = {
       ...endpoint,
-      params: endpoint.params ? JSON.parse(endpoint.params) : [],
-      aiAnalysis: endpoint.aiAnalysis ? JSON.parse(endpoint.aiAnalysis) : null,
+      id: endpoint._id?.toString(),
+      params: endpoint.params ? JSON.parse(endpoint.params as string) : [],
+      aiAnalysis: endpoint.aiAnalysis ? JSON.parse(endpoint.aiAnalysis as string) : null,
     };
 
     return NextResponse.json({
@@ -101,10 +109,11 @@ export async function PUT(
     
     updateData.updatedAt = new Date();
 
-    const endpoint = await ApiEndpoint.update({
-      where: { id },
-      data: updateData
-    });
+    const endpoint = await ApiEndpoint.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true }
+    );
 
     return NextResponse.json({
       success: true,
@@ -135,8 +144,7 @@ export async function DELETE(
 
     const { id } = await params;
 
-    await ApiEndpoint.delete({
-      where: { id });
+    await ApiEndpoint.findByIdAndDelete(id);
 
     return NextResponse.json({ 
       success: true,

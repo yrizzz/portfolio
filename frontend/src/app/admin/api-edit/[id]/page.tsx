@@ -84,11 +84,23 @@ export default function EditAPIPage({ params }: { params: Promise<{ id: string }
   }, [apiId]);
 
   const fetchAPI = async () => {
-    if (!apiId) return;
+    if (!apiId) {
+      console.log('[Edit Page] fetchAPI called but apiId is empty:', apiId);
+      return;
+    }
+    
+    console.log('[Edit Page] Fetching API with ID:', apiId);
     
     try {
       const response = await fetch(`/api/endpoints/${apiId}`);
       const data = await response.json();
+      
+      console.log('=== API Edit Debug ===');
+      console.log('Response data:', data);
+      console.log('Endpoint:', data.endpoint);
+      console.log('Code:', data.endpoint?.code);
+      console.log('RawScript:', data.endpoint?.rawScript);
+      console.log('Params:', data.endpoint?.params);
       
       if (data.success) {
         const api = data.endpoint;
@@ -106,10 +118,13 @@ export default function EditAPIPage({ params }: { params: Promise<{ id: string }
           status: api.status,
         });
         
+        console.log('FormData set with code:', api.rawScript || api.code || '');
+        
         // Load params if exists
         if (api.params) {
           try {
             const parsedParams = typeof api.params === 'string' ? JSON.parse(api.params) : api.params;
+            console.log('Parsed params:', parsedParams);
             setApiParams(Array.isArray(parsedParams) ? parsedParams : []);
           } catch (e) {
             console.error('Failed to parse params:', e);

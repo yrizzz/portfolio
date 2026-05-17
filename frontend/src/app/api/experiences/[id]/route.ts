@@ -1,5 +1,5 @@
 import { connectDB } from '@/lib/mongodb';
-import { Experience } from \'@/models\';
+import { Experience } from '@/models';
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 
@@ -10,8 +10,7 @@ export async function GET(
   await connectDB();
   try {
     const { id } = await context.params;
-    const experience = await Experience.findUnique({
-      where: { id });
+    const experience = await Experience.findOne({ _id: id });
     
     if (!experience) {
       return NextResponse.json({ error: "Experience not found" }, { status: 404 });
@@ -37,9 +36,9 @@ export async function PUT(
     const { id } = await context.params;
     const body = await request.json();
     
-    const experience = await Experience.update({
-      where: { id },
-      data: {
+    const experience = await Experience.findByIdAndUpdate(
+      id,
+      {
         title: body.title,
         company: body.company,
         location: body.location,
@@ -47,7 +46,9 @@ export async function PUT(
         description: body.description,
         current: body.current || false,
         order: body.order || 0,
-      });
+      },
+      { new: true }
+    );
 
     return NextResponse.json(experience);
   } catch (error) {
@@ -67,8 +68,7 @@ export async function DELETE(
     }
 
     const { id } = await context.params;
-    await Experience.delete({
-      where: { id });
+    await Experience.findByIdAndDelete(id);
 
     return NextResponse.json({ success: true });
   } catch (error) {

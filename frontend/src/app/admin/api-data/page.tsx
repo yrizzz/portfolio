@@ -270,9 +270,9 @@ export default function APIsPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {apis.map((api) => (
+            {apis.map((api, index) => (
               <div
-                key={api.id}
+                key={api.id || api._id || `api-${index}`}
                 className="group relative bg-background/50 backdrop-blur-sm border-2 border-border/50 rounded-xl p-4 sm:p-5 hover:border-primary/50 transition-all duration-300 hover:shadow-lg"
               >
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">

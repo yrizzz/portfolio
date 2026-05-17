@@ -95,7 +95,9 @@ export function ProjectsSection() {
     fetch('/api/projects')
       .then(res => res.json())
       .then(data => {
-        setProjects(data);
+        // Handle both old and new response format
+        const projectsData = data.success && data.projects ? data.projects : data;
+        setProjects(projectsData);
         setLoading(false);
       })
       .catch(err => {

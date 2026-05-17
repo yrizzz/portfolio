@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('List models error:', error);
+    console.error('[Gemini Models] Error:', error);
     
     // Extract detailed error information
     let errorMessage = error.message || 'Failed to list models';
@@ -101,9 +101,16 @@ export async function POST(request: NextRequest) {
   try {
     const session = await auth();
     
-    if (!session || session.user?.role !== 'ADMIN') {
+    if (!session?.user?.email) {
       return NextResponse.json(
-        { error: 'Unauthorized - Admin only' },
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
+    if (session.user?.role !== 'ADMIN') {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden - Admin only' },
         { status: 403 }
       );
     }
@@ -154,7 +161,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('List models error:', error);
+    console.error('[Gemini Models] Error:', error);
     
     // Extract detailed error information
     let errorMessage = error.message || 'Failed to list models';

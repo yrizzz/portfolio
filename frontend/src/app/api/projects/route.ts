@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     await connectDB();
+    
     const projects = await Project.find({ published: true }).sort({ order: 1 }).lean();
 
     // Map DB fields to frontend format
@@ -22,11 +23,19 @@ export async function GET() {
       featured: p.featured,
     }));
 
-    return NextResponse.json(mapped);
+    return NextResponse.json({
+      success: true,
+      projects: mapped,
+    });
+    
   } catch (error: any) {
-    console.error('Failed to fetch projects:', error);
+    console.error('[Projects GET] Error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch projects', details: error.message },
+      { 
+        success: false, 
+        error: 'Failed to fetch projects',
+        details: error.message 
+      },
       { status: 500 }
     );
   }
@@ -35,6 +44,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     await connectDB();
+    
     const data = await req.json();
 
     // Handle bulk save (from admin page)
@@ -73,10 +83,15 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ success: true, project });
+    
   } catch (error: any) {
-    console.error('Failed to save projects:', error);
+    console.error('[Projects POST] Error:', error);
     return NextResponse.json(
-      { error: 'Failed to save projects', details: error.message },
+      { 
+        success: false, 
+        error: 'Failed to save projects',
+        details: error.message 
+      },
       { status: 500 }
     );
   }

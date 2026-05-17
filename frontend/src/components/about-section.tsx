@@ -24,6 +24,8 @@ export function AboutSection() {
     fetch('/api/skills')
       .then(res => res.json())
       .then(data => {
+        // Handle both old and new response format
+        const skillsData = data.success && data.skills ? data.skills : data;
         // Group skills by category
         const grouped = data.reduce((acc: any, skill: Skill) => {
           if (!acc[skill.category]) {

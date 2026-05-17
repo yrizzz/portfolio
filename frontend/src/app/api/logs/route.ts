@@ -5,13 +5,21 @@ import { ApiRequest } from '@/models';
 
 // GET - Get API request logs
 export async function GET(req: NextRequest) {
-  await connectDB();
   try {
+    await connectDB();
+    
     const session = await auth();
     
-    if (!session || session.user?.role !== 'ADMIN') {
+    if (!session?.user?.email) {
       return NextResponse.json(
-        { error: 'Unauthorized - Admin only' },
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
+    if (session.user?.role !== 'ADMIN') {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden - Admin only' },
         { status: 403 }
       );
     }
@@ -42,9 +50,13 @@ export async function GET(req: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('Error fetching logs:', error);
+    console.error('[Logs GET] Error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch logs', details: error.message },
+      { 
+        success: false, 
+        error: 'Failed to fetch logs',
+        details: error.message 
+      },
       { status: 500 }
     );
   }

@@ -1,14 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { connectDB } from "@/lib/mongodb";
+import { ApiEndpoint } from "@/models";
 
 // GET - List all API endpoints with filters
 export async function GET(request: NextRequest) {
   try {
+    await connectDB();
+    
     const session = await auth();
 
     // Only admin can view
-    if (!session || session.user?.role !== "ADMIN") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+    
+    if (session.user?.role !== "ADMIN") {
+      return NextResponse.json(
+        { success: false, error: "Forbidden - Admin only" },
+        { status: 403 }
+      );
     }
 
     const { searchParams } = new URL(request.url);
@@ -23,16 +37,14 @@ export async function GET(request: NextRequest) {
     if (enabled !== null) where.enabled = enabled === 'true';
     if (language) where.language = language;
 
-    const endpoints = await prisma.apiEndpoint.findMany({
-      where,
-        { order: 'asc' },
-        { createdAt: 'desc' }
-      ]
-    });
+    const endpoints = await ApiEndpoint.find(where)
+      .sort({ order: 'asc', createdAt: 'desc' })
+      .lean();
 
-    // Parse JSON fields
-    const endpointsWithParsed = endpoints.map(ep => ({
+    // Parse JSON fields and add id
+    const endpointsWithParsed = endpoints.map((ep: any) => ({
       ...ep,
+      id: ep._id?.toString(),
       params: ep.params ? JSON.parse(ep.params) : [],
       aiAnalysis: ep.aiAnalysis ? JSON.parse(ep.aiAnalysis) : null,
     }));
@@ -41,10 +53,14 @@ export async function GET(request: NextRequest) {
       success: true,
       endpoints: endpointsWithParsed,
     });
-  } catch (error) {
-    console.error("Error fetching endpoints:", error);
+  } catch (error: any) {
+    console.error("[Endpoints GET] Error:", error);
     return NextResponse.json(
-      { error: "Failed to fetch endpoints" },
+      { 
+        success: false, 
+        error: "Failed to fetch endpoints",
+        details: error.message 
+      },
       { status: 500 }
     );
   }
@@ -100,25 +116,24 @@ export async function POST(request: NextRequest) {
       hasCode: !!finalCode
     });
 
-    const endpoint = await prisma.apiEndpoint.create({
-        name,
-        description: description || "",
-        method: method.toUpperCase(),
-        path,
-        category: category || 'custom',
-        language: (language || 'nodejs').toLowerCase(),
-        rawScript: finalCode,
-        code: finalCode,
-        params: params ? JSON.stringify(params) : null,
-        exampleCode: exampleCode || null,
-        enabled: enabled !== undefined ? enabled : true,
-        status: 'approved',
-        requiresAuth: requiresAuth || false,
-        rateLimit: rateLimit || 100,
-        order: 0,
-        approvedAt: new Date(),
-        approvedBy: session.user.email || session.user.name || 'admin',
-      }
+    const endpoint = await ApiEndpoint.create({
+      name,
+      description: description || "",
+      method: method.toUpperCase(),
+      path,
+      category: category || 'custom',
+      language: (language || 'nodejs').toLowerCase(),
+      rawScript: finalCode,
+      code: finalCode,
+      params: params ? JSON.stringify(params) : undefined,
+      exampleCode: exampleCode || undefined,
+      enabled: enabled !== undefined ? enabled : true,
+      status: 'approved',
+      requiresAuth: requiresAuth || false,
+      rateLimit: rateLimit || 100,
+      order: 0,
+      approvedAt: new Date(),
+      approvedBy: session.user.email || session.user.name || 'admin',
     });
 
     console.log('Endpoint created successfully:', endpoint.id);

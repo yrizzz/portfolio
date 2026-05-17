@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
-import { Experience } from \'@/models\';
 import { Experience, Education } from '@/models';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  await connectDB();
   try {
+    await connectDB();
+    
     const experiences = await Experience.find().sort({ order: 1 });
-
     const education = await Education.find().sort({ order: 1 });
 
     return NextResponse.json({
+      success: true,
       experiences: experiences.map((e: any) => ({
         id: e.id,
         title: e.title,
@@ -30,18 +30,24 @@ export async function GET() {
         period: e.period,
       })),
     });
+    
   } catch (error: any) {
-    console.error('Failed to fetch experiences:', error);
+    console.error('[Experiences GET] Error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch experiences', details: error.message },
+      { 
+        success: false, 
+        error: 'Failed to fetch experiences',
+        details: error.message 
+      },
       { status: 500 }
     );
   }
 }
 
 export async function POST(req: NextRequest) {
-  await connectDB();
   try {
+    await connectDB();
+    
     const data = await req.json();
     const { experiences, education } = data;
 
@@ -52,17 +58,16 @@ export async function POST(req: NextRequest) {
       for (let i = 0; i < experiences.length; i++) {
         const exp = experiences[i];
         await Experience.create({
-            id: exp.id || crypto.randomUUID(),
-            title: exp.title,
-            company: exp.company,
-            location: exp.location || '',
-            period: exp.period || `${exp.startDate || ''} - ${exp.endDate || 'Present'}`,
-            description: exp.description || '',
-            current: exp.current || false,
-            order: i,
-            updatedAt: new Date(),
-          },
-        });
+          id: exp.id || crypto.randomUUID(),
+          title: exp.title,
+          company: exp.company,
+          location: exp.location || '',
+          period: exp.period || `${exp.startDate || ''} - ${exp.endDate || 'Present'}`,
+          description: exp.description || '',
+          current: exp.current || false,
+          order: i,
+          updatedAt: new Date(),
+        } as any);
       }
     }
 
@@ -73,23 +78,27 @@ export async function POST(req: NextRequest) {
       for (let i = 0; i < education.length; i++) {
         const edu = education[i];
         await Education.create({
-            id: edu.id || crypto.randomUUID(),
-            degree: edu.degree,
-            institution: edu.institution,
-            location: edu.location || '',
-            period: edu.period || `${edu.startDate || ''} - ${edu.endDate || ''}`,
-            order: i,
-            updatedAt: new Date(),
-          },
-        });
+          id: edu.id || crypto.randomUUID(),
+          degree: edu.degree,
+          institution: edu.institution,
+          location: edu.location || '',
+          period: edu.period || `${edu.startDate || ''} - ${edu.endDate || ''}`,
+          order: i,
+          updatedAt: new Date(),
+        } as any);
       }
     }
 
     return NextResponse.json({ success: true });
+    
   } catch (error: any) {
-    console.error('Failed to save experiences:', error);
+    console.error('[Experiences POST] Error:', error);
     return NextResponse.json(
-      { error: 'Failed to save experiences', details: error.message },
+      { 
+        success: false, 
+        error: 'Failed to save experiences',
+        details: error.message 
+      },
       { status: 500 }
     );
   }

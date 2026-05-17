@@ -5,13 +5,21 @@ import { SiteConfig } from '@/models';
 
 // GET - Get site config
 export async function GET(req: NextRequest) {
-  await connectDB();
   try {
+    await connectDB();
+    
     const session = await auth();
     
-    if (!session || session.user?.role !== 'ADMIN') {
+    if (!session?.user?.email) {
       return NextResponse.json(
-        { error: 'Unauthorized - Admin only' },
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
+    if (session.user?.role !== 'ADMIN') {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden - Admin only' },
         { status: 403 }
       );
     }
@@ -39,9 +47,13 @@ export async function GET(req: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('[Config GET] Error fetching config:', error);
+    console.error('[Config GET] Error:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch config', details: error.message },
+      { 
+        success: false, 
+        error: 'Failed to fetch config',
+        details: error.message 
+      },
       { status: 500 }
     );
   }
@@ -49,13 +61,21 @@ export async function GET(req: NextRequest) {
 
 // POST - Create or update config
 export async function POST(req: NextRequest) {
-  await connectDB();
   try {
+    await connectDB();
+    
     const session = await auth();
     
-    if (!session || session.user?.role !== 'ADMIN') {
+    if (!session?.user?.email) {
       return NextResponse.json(
-        { error: 'Unauthorized - Admin only' },
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
+    if (session.user?.role !== 'ADMIN') {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden - Admin only' },
         { status: 403 }
       );
     }
@@ -75,10 +95,11 @@ export async function POST(req: NextRequest) {
     // Sanitize value if it's an API key
     const cleanValue = typeof value === 'string' ? value.trim() : value;
 
-    const config = await Siteconfig.upsert({ key },
-      update: { value: cleanValue, updatedAt: new Date() },
-      create: { key, value: cleanValue },
-    });
+    const config = await SiteConfig.findOneAndUpdate(
+      { key },
+      { value: cleanValue, updatedAt: new Date() },
+      { upsert: true, new: true }
+    );
 
     console.log('[Config POST] Config saved successfully:', key);
 
@@ -89,9 +110,13 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('[Config POST] Error saving config:', error);
+    console.error('[Config POST] Error:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to save config', details: error.message },
+      { 
+        success: false, 
+        error: 'Failed to save config',
+        details: error.message 
+      },
       { status: 500 }
     );
   }

@@ -35,11 +35,15 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'License not found' }, { status: 404 });
     }
 
-    const updatedLicense = await License.findByIdAndUpdate( id , { autoRenew: autoRenew ?? !License.autoRenew });
+    const updatedLicense = await License.findByIdAndUpdate(
+      id,
+      { autoRenew: autoRenew ?? !license.autoRenew },
+      { new: true }
+    );
 
     return NextResponse.json({ 
       license: updatedLicense,
-      message: `Auto-renew ${updatedLicense.autoRenew ? 'enabled' : 'disabled'} successfully`
+      message: `Auto-renew ${updatedLicense?.autoRenew ? 'enabled' : 'disabled'} successfully`
     });
   } catch (error) {
     console.error('Error toggling auto-renew:', error);

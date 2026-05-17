@@ -19,9 +19,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const licenses = await License.find({ userId: user._id },
-      .sort({ createdAt: -1 }),
-    });
+    const licenses = await License.find({ userId: user._id })
+      .sort({ createdAt: -1 })
+      .lean();
 
     return NextResponse.json({ licenses });
   } catch (error) {
@@ -68,14 +68,13 @@ export async function POST(request: NextRequest) {
     // For now, we'll create the license directly (demo mode)
 
     const license = await License.create({
-        userId: user._id,
-        type,
-        price: config.price,
-        startDate,
-        endDate,
-        isActive: true,
-        autoRenew: false,
-      },
+      userId: user._id,
+      type,
+      price: config.price,
+      startDate,
+      endDate,
+      isActive: true,
+      autoRenew: false,
     });
 
     return NextResponse.json({ 
@@ -122,10 +121,10 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Deactivate license instead of deleting
-    await License.findByIdAndUpdate( id: licenseId , { 
-        isActive: false,
-        autoRenew: false 
-      });
+    await License.findByIdAndUpdate(licenseId, { 
+      isActive: false,
+      autoRenew: false 
+    });
 
     return NextResponse.json({ message: 'License canceled successfully' });
   } catch (error) {

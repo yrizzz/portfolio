@@ -95,22 +95,21 @@ Return ONLY valid JSON without any markdown formatting or code blocks.
 
     // Create pending endpoint submission
     const endpoint = await ApiEndpoint.create({
-        name: aiAnalysis.name || 'Unnamed API',
-        description: aiAnalysis.description || '',
-        method: aiAnalysis.method || 'GET',
-        path: aiAnalysis.path || '/api/custom',
-        category: aiAnalysis.category || 'tool',
-        language: language,
-        rawScript: rawScript,
-        code: aiAnalysis.adapted_code || rawScript,
-        aiAnalysis: JSON.stringify(aiAnalysis),
-        enabled: false,
-        status: 'pending',
-        requiresAuth: aiAnalysis.requiresAuth || false,
-        rateLimit: aiAnalysis.rateLimit || 100,
-        params: JSON.stringify(aiAnalysis.params || []),
-        exampleCode: aiAnalysis.example_code || null,
-      },
+      name: aiAnalysis.name || 'Unnamed API',
+      description: aiAnalysis.description || '',
+      method: aiAnalysis.method || 'GET',
+      path: aiAnalysis.path || '/api/custom',
+      category: aiAnalysis.category || 'tool',
+      language: language,
+      rawScript: rawScript,
+      code: aiAnalysis.adapted_code || rawScript,
+      aiAnalysis: JSON.stringify(aiAnalysis),
+      enabled: false,
+      status: 'pending',
+      requiresAuth: aiAnalysis.requiresAuth || false,
+      rateLimit: aiAnalysis.rateLimit || 100,
+      params: JSON.stringify(aiAnalysis.params || []),
+      exampleCode: aiAnalysis.example_code || null,
     });
 
     return NextResponse.json({

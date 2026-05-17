@@ -1,8 +1,8 @@
-import mongoose, { Schema, Document, Model } from 'mongoose';
+import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 
 export interface IAccount extends Document {
-  _id: string;
-  userId: string;
+  _id: Types.ObjectId;
+  userId: Types.ObjectId;
   type: string;
   provider: string;
   providerAccountId: string;

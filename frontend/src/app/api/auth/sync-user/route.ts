@@ -18,11 +18,11 @@ export async function POST() {
     // Create user if doesn't exist
     if (!user) {
       user = await User.create({
-        email: session.user.email,
-        name: session.user.name || null,
-        image: session.user.image || null,
-        role: "USER",
-      });
+      email: session.user.email,
+      name: session.user.name || undefined,
+      image: session.user.image || undefined,
+      role: (session.user as any).role || 'USER',
+    } as any);
     }
 
     return NextResponse.json({ 

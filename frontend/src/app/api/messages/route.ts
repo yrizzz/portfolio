@@ -6,34 +6,57 @@ import { auth } from "@/lib/auth";
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  await connectDB();
   try {
+    await connectDB();
+    
     const messages = await Contact.find().sort({ createdAt: -1 }).lean();
 
-    return NextResponse.json({ messages });
+    return NextResponse.json({
+      success: true,
+      messages,
+    });
+    
   } catch (error: any) {
+    console.error('[Messages GET] Error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch messages', details: error.message },
+      { 
+        success: false, 
+        error: 'Failed to fetch messages',
+        details: error.message 
+      },
       { status: 500 }
     );
   }
 }
 
 export async function POST(req: NextRequest) {
-  await connectDB();
   try {
+    await connectDB();
+    
     const { name, email, subject, message } = await req.json();
 
     if (!name || !email || !message) {
-      return NextResponse.json({ error: 'Name, email, and message are required' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: 'Name, email, and message are required' },
+        { status: 400 }
+      );
     }
 
     const contact = await Contact.create({ name, email, subject: subject || null, message });
 
-    return NextResponse.json({ success: true, message: contact });
+    return NextResponse.json({
+      success: true,
+      message: contact,
+    });
+    
   } catch (error: any) {
+    console.error('[Messages POST] Error:', error);
     return NextResponse.json(
-      { error: 'Failed to send message', details: error.message },
+      { 
+        success: false, 
+        error: 'Failed to send message',
+        details: error.message 
+      },
       { status: 500 }
     );
   }

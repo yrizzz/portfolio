@@ -62,13 +62,13 @@ async function migrateUsers() {
       await Models.User.create({
         // Don't set _id, let MongoDB generate it
         email: user.email,
-        name: user.name,
-        image: user.image,
+        name: user.name || undefined,
+        image: user.image || undefined,
         role: user.role,
-        emailVerified: user.emailVerified,
+        emailVerified: user.emailVerified || undefined,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
-      });
+      } as any);
     }
 
     stats.push({ model: 'User', count: users.length, success: true });

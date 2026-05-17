@@ -47,7 +47,15 @@ export function HeroSection() {
   useEffect(() => {
     fetch('/api/profile')
       .then(res => res.json())
-      .then(data => setProfileData(data))
+      .then(data => {
+        // Handle both old and new response format
+        if (data.success && data.profile) {
+          setProfileData(data.profile);
+        } else if (data.name) {
+          // Old format (direct data)
+          setProfileData(data);
+        }
+      })
       .catch(err => console.error('Failed to load profile:', err));
   }, []);
 

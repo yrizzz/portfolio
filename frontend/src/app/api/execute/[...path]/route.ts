@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
-import { ApiEndpoint } from \'@/models\';
 import { ApiRequest, ApiEndpoint } from '@/models';
 import { checkEndpointAuth } from '@/lib/api-auth';
 import { rateLimiter, generateRateLimitKey, getRateLimitHeaders } from '@/lib/rate-limiter';
@@ -288,14 +287,13 @@ async function handleDynamicAPI(
     // Log the request
     await ApiRequest.create({
         endpoint: apiPath,
-        method: method,
-        statusCode: executionResult.success ? 200 : 500,
-        responseTime: executionResult.executionTime,
-        ipAddress: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown',
-        userAgent: req.headers.get('user-agent') || null,
-        apiKeyId: authResult.apiKey?.id || null,
-        userId: authResult.user?.id || null,
-      },
+      method: method,
+      statusCode: executionResult.success ? 200 : 500,
+      responseTime: executionResult.executionTime,
+      ipAddress: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown',
+      userAgent: req.headers.get('user-agent') || undefined,
+      apiKeyId: authResult.apiKey?.id || undefined,
+      userId: authResult.user?.id || undefined,
     });
 
     // Add rate limit headers to response

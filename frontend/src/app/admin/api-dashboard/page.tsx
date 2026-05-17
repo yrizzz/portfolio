@@ -164,9 +164,9 @@ export default function APIManagementDashboard() {
           <p className="text-muted-foreground text-center py-8">No APIs yet</p>
         ) : (
           <div className="space-y-3">
-            {endpoints.slice(0, 5).map((api: any) => (
+            {endpoints.slice(0, 5).map((api: any, index: number) => (
               <div
-                key={api.id}
+                key={api.id || api._id || `api-${index}`}
                 className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-accent transition-colors"
               >
                 <div className="flex items-center gap-3">
@@ -203,9 +203,9 @@ export default function APIManagementDashboard() {
         <GlowCard className="p-6">
           <h3 className="text-lg font-semibold mb-4">Recent Errors</h3>
           <div className="space-y-2">
-            {stats.analytics.recentErrors.slice(0, 5).map((error: any) => (
+            {stats.analytics.recentErrors.slice(0, 5).map((error: any, index: number) => (
               <div
-                key={error.id}
+                key={error.id || error._id || index}
                 className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg"
               >
                 <div>
@@ -222,4 +222,5 @@ export default function APIManagementDashboard() {
       )}
     </div>
   );
+
 }

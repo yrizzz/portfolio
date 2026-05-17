@@ -68,7 +68,10 @@ export default function ProjectsPage() {
     try {
       const response = await fetch('/api/projects');
       const data = await response.json();
-      setProjects(data);
+      
+      // Handle both old and new response format
+      const projectsData = data.success && data.projects ? data.projects : data;
+      setProjects(Array.isArray(projectsData) ? projectsData : []);
     } catch (error) {
       console.error('Failed to load projects:', error);
       toast.error('Failed to load projects');

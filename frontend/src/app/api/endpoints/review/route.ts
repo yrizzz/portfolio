@@ -19,12 +19,9 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status') || 'pending';
 
-    const submissions = await ApiEndpoint.find({
-        status: status,
-      },
-        createdAt: 'desc',
-      },
-    });
+    const submissions = await ApiEndpoint.find({ status })
+      .sort({ createdAt: 'desc' })
+      .lean();
 
     // Parse aiAnalysis for each submission
     const submissionsWithAnalysis = submissions.map(sub => ({
@@ -101,9 +98,11 @@ export async function PATCH(req: NextRequest) {
       updateData.rejectedReason = rejectedReason || 'No reason provided';
     }
 
-    const endpoint = await ApiEndpoint.findByIdAndUpdate({ id },
-      data: updateData,
-    });
+    const endpoint = await ApiEndpoint.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true }
+    );
 
     return NextResponse.json({
       success: true,
@@ -112,9 +111,13 @@ export async function PATCH(req: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('Error updating submission:', error);
+    console.error('[Endpoints Review POST] Error:', error);
     return NextResponse.json(
-      { error: 'Failed to update submission', details: error.message },
+      { 
+        success: false, 
+        error: 'Failed to update submission',
+        details: error.message 
+      },
       { status: 500 }
     );
   }

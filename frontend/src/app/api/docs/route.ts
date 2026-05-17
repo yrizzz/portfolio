@@ -11,21 +11,20 @@ export async function GET(request: NextRequest) {
 
     // Fetch all approved and enabled endpoints
     const endpoints = await ApiEndpoint.find({
-        status: 'approved',
-        enabled: true,
-      },
-    });
+      status: 'approved',
+      enabled: true,
+    }).lean();
 
     if (format === 'openapi') {
       // Generate OpenAPI 3.0 specification
-      const openApiSpec = generateOpenAPISpec(endpoints);
+      const openApiSpec = generateOpenAPISpec(endpoints as any);
       return NextResponse.json(openApiSpec);
     }
 
     // Return simple JSON format
     return NextResponse.json({
-      endpoints: endpoints.map(endpoint => ({
-        id: endpoint.id,
+      endpoints: endpoints.map((endpoint: any) => ({
+        id: endpoint.id || endpoint._id?.toString(),
         name: endpoint.name,
         description: endpoint.description,
         method: endpoint.method,
@@ -90,8 +89,8 @@ function generateOpenAPISpec(endpoints: any[]) {
             };
             if (param.required) {
               required.push(param.name);
-            });
-          
+            }
+          });
           requestBody = {
             required: required.length > 0,
             content: {

@@ -27,8 +27,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  await connectDB();
   try {
+    await connectDB();
+    
     const data = await req.json();
 
     // Handle bulk save (from admin page)
@@ -57,10 +58,15 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ success: true, skill });
+    
   } catch (error: any) {
-    console.error('Failed to save skills:', error);
+    console.error('[Skills POST] Error:', error);
     return NextResponse.json(
-      { error: 'Failed to save skills', details: error.message },
+      { 
+        success: false, 
+        error: 'Failed to save skills',
+        details: error.message 
+      },
       { status: 500 }
     );
   }

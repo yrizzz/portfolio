@@ -5,8 +5,9 @@ import { SocialMedia, SiteConfig } from '@/models';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  await connectDB();
   try {
+    await connectDB();
+    
     // Get profile from SiteConfig
     const configs = await SiteConfig.find();
     const configMap: Record<string, string> = {};
@@ -33,19 +34,28 @@ export async function GET() {
       })),
     };
 
-    return NextResponse.json(profile);
+    return NextResponse.json({
+      success: true,
+      profile,
+    });
+    
   } catch (error: any) {
-    console.error('Failed to fetch profile:', error);
+    console.error('[Profile GET] Error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch profile', details: error.message },
+      { 
+        success: false, 
+        error: 'Failed to fetch profile',
+        details: error.message 
+      },
       { status: 500 }
     );
   }
 }
 
 export async function POST(req: NextRequest) {
-  await connectDB();
   try {
+    await connectDB();
+    
     const data = await req.json();
     const { name, title, subtitle, location, bio1, bio2, avatarUrl, status, cvUrl, socialLinks } = data;
 
@@ -89,10 +99,15 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ success: true });
+    
   } catch (error: any) {
-    console.error('Failed to save profile:', error);
+    console.error('[Profile POST] Error:', error);
     return NextResponse.json(
-      { error: 'Failed to save profile', details: error.message },
+      { 
+        success: false, 
+        error: 'Failed to save profile',
+        details: error.message 
+      },
       { status: 500 }
     );
   }

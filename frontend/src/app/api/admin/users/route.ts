@@ -37,29 +37,53 @@ export async function GET() {
 }
 
 export async function PATCH(req: NextRequest) {
-  await connectDB();
-  const session = await auth();
-  if (!session || session.user?.role !== "ADMIN") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
+    await connectDB();
+    
+    const session = await auth();
+    
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
+    if (session.user?.role !== "ADMIN") {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden - Admin only' },
+        { status: 403 }
+      );
+    }
+
     const { userId, role } = await req.json();
 
     if (!userId || !role) {
-      return NextResponse.json({ error: 'Missing userId or role' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: 'Missing userId or role' },
+        { status: 400 }
+      );
     }
 
     if (!['USER', 'ADMIN'].includes(role)) {
-      return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: 'Invalid role' },
+        { status: 400 }
+      );
     }
 
     await User.findByIdAndUpdate(userId, { role });
 
     return NextResponse.json({ success: true });
+    
   } catch (error: any) {
+    console.error('[Admin Users PATCH] Error:', error);
     return NextResponse.json(
-      { error: 'Failed to update user', details: error.message },
+      { 
+        success: false, 
+        error: 'Failed to update user',
+        details: error.message 
+      },
       { status: 500 }
     );
   }

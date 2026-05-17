@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { connectDB } from '@/lib/mongodb';
-import { ApiEndpoint } from \'@/models\';
 import { ApiRequest, ApiEndpoint } from '@/models';
 
 // GET - Get API analytics and monitoring data
@@ -119,9 +118,13 @@ export async function GET(req: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('Error fetching analytics:', error);
+    console.error('[Analytics GET] Error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch analytics', details: error.message },
+      { 
+        success: false, 
+        error: 'Failed to fetch analytics',
+        details: error.message 
+      },
       { status: 500 }
     );
   }

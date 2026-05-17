@@ -78,8 +78,12 @@ export default function ProfilePage() {
     try {
       const response = await fetch('/api/profile');
       const data = await response.json();
-      setFormData(data);
-      setImagePreview(data.avatarUrl);
+      
+      // Handle both old and new response format
+      const profileData = data.success && data.profile ? data.profile : data;
+      
+      setFormData(profileData);
+      setImagePreview(profileData.avatarUrl);
     } catch (error) {
       console.error('Failed to load profile:', error);
       toast.error('Failed to load profile data');

@@ -36,9 +36,9 @@ export async function PUT(
     const { id } = await context.params;
     const body = await request.json();
 
-    const project = await Project.update({
-      where: { id },
-      data: {
+    const project = await Project.findByIdAndUpdate(
+      id,
+      {
         title: body.title,
         description: body.description,
         image: body.image,
@@ -48,7 +48,9 @@ export async function PUT(
         featured: body.featured,
         order: body.order,
         published: body.published,
-      });
+      },
+      { new: true }
+    );
 
     return NextResponse.json(project);
   } catch (error) {
@@ -61,14 +63,15 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    await connectDB();
+    
     const session = await auth();
     if (!session || session.user?.role !== "ADMIN") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await context.params;
-    await Project.delete({
-      where: { id });
+    await Project.findByIdAndDelete(id);
 
     return NextResponse.json({ success: true });
   } catch (error) {
