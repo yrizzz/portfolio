@@ -15,7 +15,7 @@ export function ScrollToTop() {
   }, []);
 
   const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: window.innerWidth >= 768 ? "smooth" : "auto" });
   };
 
   return (

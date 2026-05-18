@@ -110,7 +110,7 @@ export function AppSidebar() {
             
             window.scrollTo({
               top: offsetPosition,
-              behavior: "smooth"
+              behavior: window.innerWidth >= 768 ? "smooth" : "auto"
             });
           }
         }, 350);

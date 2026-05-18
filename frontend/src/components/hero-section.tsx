@@ -81,7 +81,7 @@ export function HeroSection() {
     if (el) {
       const offset = 80;
       const pos = el.getBoundingClientRect().top + window.pageYOffset - offset;
-      window.scrollTo({ top: pos, behavior: "smooth" });
+      window.scrollTo({ top: pos, behavior: window.innerWidth >= 768 ? "smooth" : "auto" });
     }
   };
 
@@ -186,7 +186,7 @@ export function HeroSection() {
                   if (contactSection) {
                     const offset = 80;
                     const pos = contactSection.getBoundingClientRect().top + window.pageYOffset - offset;
-                    window.scrollTo({ top: pos, behavior: "smooth" });
+                    window.scrollTo({ top: pos, behavior: window.innerWidth >= 768 ? "smooth" : "auto" });
                   }
                 }}
               >

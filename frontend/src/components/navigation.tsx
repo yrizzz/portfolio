@@ -45,7 +45,7 @@ export function Navigation() {
 
       window.scrollTo({
         top: offsetPosition,
-        behavior: "smooth"
+        behavior: window.innerWidth >= 768 ? "smooth" : "auto"
       });
       setIsMobileMenuOpen(false);
     }

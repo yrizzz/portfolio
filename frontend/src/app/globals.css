@@ -123,10 +123,14 @@
     @apply border-border outline-ring/50;
   }
   html {
-    @apply font-sans scroll-smooth;
-    scroll-behavior: smooth;
+    @apply font-sans;
     /* clip instead of hidden — does NOT create a scroll container */
     overflow-x: clip;
+  }
+  @media (min-width: 768px) {
+    html {
+      scroll-behavior: smooth;
+    }
   }
   body {
     @apply bg-background text-foreground;
