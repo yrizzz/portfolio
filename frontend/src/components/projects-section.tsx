@@ -27,7 +27,7 @@ function ProjectCard({ project, index }: { project: Project; index: number }) {
     <GlowCard hoverScale={1.02} className="h-full">
       <div className="flex flex-col h-full">
         {/* Image - Full width di atas */}
-        <div className="relative w-full aspect-[4/3] md:aspect-[16/10] rounded-t-xl overflow-hidden group flex-shrink-0">
+        <div className="relative w-full aspect-video md:aspect-[16/10] rounded-t-xl overflow-hidden group flex-shrink-0">
           <img
             src={project.image}
             alt={project.title}
