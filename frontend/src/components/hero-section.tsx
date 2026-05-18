@@ -87,7 +87,7 @@ export function HeroSection() {
 
   return (
     <section className="relative flex items-center justify-center py-8 lg:py-0 lg:h-[calc(100vh-3.5rem)]">
-      <div className="max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto w-full lg:-mt-24 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto w-full lg:-mt-24">
         {/* Free Palestine Banner */}
         <div className="mb-4 lg:mb-8 flex justify-center animate-in fade-in slide-in-from-top-4 duration-700">
           <div className="flex items-center gap-2 px-5 py-2.5 md:px-6 md:py-3 rounded-full bg-background/20 dark:bg-background/15 backdrop-blur-md shadow-[0_8px_32px_0_rgba(13,71,196,0.15)] dark:shadow-[0_8px_32px_0_rgba(59,130,246,0.2)] border border-white/10 dark:border-white/5 hover:scale-105 transition-transform duration-300">
@@ -103,9 +103,9 @@ export function HeroSection() {
             {/* Avatar */}
             <div className="relative group">
               <div className="absolute -inset-1 bg-gradient-to-r from-[#0d47c4] via-[#3b82f6] to-[#136bfe] rounded-full blur-lg opacity-50 group-hover:opacity-75 transition-opacity duration-500" />
-              <Avatar className="relative h-32 w-32 md:h-40 md:w-40 lg:h-44 lg:w-44 2xl:h-52 2xl:w-52 border-4 border-white/20 dark:border-white/10 shadow-2xl backdrop-blur-sm">
+              <Avatar className="relative h-40 w-40 md:h-44 md:w-44 lg:h-48 lg:w-48 2xl:h-52 2xl:w-52 border-4 border-white/20 dark:border-white/10 shadow-2xl backdrop-blur-sm">
                 <AvatarImage src={profileData.avatarUrl} alt={profileData.name} />
-                <AvatarFallback className="text-xl lg:text-2xl 2xl:text-4xl font-bold bg-gradient-to-br from-[#0d47c4] to-[#3b82f6] text-white">
+                <AvatarFallback className="text-2xl lg:text-3xl 2xl:text-4xl font-bold bg-gradient-to-br from-[#0d47c4] to-[#3b82f6] text-white">
                   {profileData.name.substring(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
@@ -166,10 +166,10 @@ export function HeroSection() {
                 {profileData.subtitle}
               </h2>
               <div className="space-y-2 lg:space-y-3">
-                <p className="text-sm 2xl:text-base text-muted-foreground leading-relaxed text-justify">
+                <p className="text-[15px] md:text-sm 2xl:text-base text-muted-foreground leading-relaxed text-justify">
                   {profileData.bio1}
                 </p>
-                <p className="text-sm 2xl:text-base text-muted-foreground leading-relaxed text-justify">
+                <p className="text-[15px] md:text-sm 2xl:text-base text-muted-foreground leading-relaxed text-justify">
                   {profileData.bio2}
                 </p>
               </div>
