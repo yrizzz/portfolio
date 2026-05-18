@@ -27,7 +27,7 @@ function ProjectCard({ project, index }: { project: Project; index: number }) {
     <GlowCard hoverScale={1.02} className="h-full">
       <div className="flex flex-col h-full">
         {/* Image - Full width di atas */}
-        <div className="relative w-full h-56 rounded-t-xl overflow-hidden group flex-shrink-0">
+        <div className="relative w-full aspect-[4/3] md:aspect-[16/10] rounded-t-xl overflow-hidden group flex-shrink-0">
           <img
             src={project.image}
             alt={project.title}
@@ -51,9 +51,9 @@ function ProjectCard({ project, index }: { project: Project; index: number }) {
           <p className="text-sm text-muted-foreground line-clamp-2">
             {project.description}
           </p>
-          <div className="flex flex-wrap gap-1.5 flex-1">
+          <div className="flex flex-wrap gap-1 flex-1 mt-1">
             {project.tags.map((tag) => (
-              <Badge key={tag} variant="outline" className="text-xs h-fit">
+              <Badge key={tag} variant="outline" className="text-[10px] sm:text-[11px] px-2 py-0.5 font-medium h-auto leading-tight bg-background/50">
                 {tag}
               </Badge>
             ))}
