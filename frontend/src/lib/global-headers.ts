@@ -68,3 +68,34 @@ export async function getAllGlobalHeaders(
     return {};
   }
 }
+
+/**
+ * Get any active global headers (fallback for public endpoints)
+ */
+export async function getAllGlobalHeadersFallback(): Promise<Record<string, Record<string, string>>> {
+  try {
+    await connectDB();
+    
+    // Find one active header per service
+    const headers = await GlobalHeader.find({
+      isActive: true,
+    }).lean();
+
+    const result: Record<string, Record<string, string>> = {};
+    
+    for (const header of headers) {
+      if (!result[header.service]) { // Only take the first one found for each service
+        if (header.headers instanceof Map) {
+          result[header.service] = Object.fromEntries(header.headers);
+        } else if (typeof header.headers === 'object' && header.headers !== null) {
+          result[header.service] = header.headers;
+        }
+      }
+    }
+
+    return result;
+  } catch (error) {
+    console.error('[getAllGlobalHeadersFallback] Error:', error);
+    return {};
+  }
+}

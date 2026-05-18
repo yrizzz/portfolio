@@ -4,7 +4,7 @@ import { ApiRequest, ApiEndpoint } from '@/models';
 import { checkEndpointAuth } from '@/lib/api-auth';
 import { rateLimiter, generateRateLimitKey, getRateLimitHeaders } from '@/lib/rate-limiter';
 import { executeCode } from '@/lib/code-executor';
-import { getAllGlobalHeaders } from '@/lib/global-headers';
+import { getAllGlobalHeaders, getAllGlobalHeadersFallback } from '@/lib/global-headers';
 import { writeFile, unlink, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
@@ -297,16 +297,24 @@ async function handleDynamicAPI(
       userEmailForHeaders = (endpoint as any).createdBy;
     }
     
-    if (userEmailForHeaders) {
-      try {
-        const globalHeaders = await getAllGlobalHeaders(userEmailForHeaders);
-        if (Object.keys(globalHeaders).length > 0) {
-          requestParams._globalHeaders = globalHeaders;
-        }
-      } catch (error) {
-        console.error('[Execute] Failed to get global headers:', error);
-        // Continue without global headers
+    try {
+      let globalHeaders: Record<string, Record<string, string>> = {};
+      
+      if (userEmailForHeaders) {
+        globalHeaders = await getAllGlobalHeaders(userEmailForHeaders);
       }
+      
+      // Fallback: If no headers found or no user specified (public API), get any active headers
+      if (Object.keys(globalHeaders).length === 0) {
+        globalHeaders = await getAllGlobalHeadersFallback();
+      }
+
+      if (Object.keys(globalHeaders).length > 0) {
+        requestParams._globalHeaders = globalHeaders;
+      }
+    } catch (error) {
+      console.error('[Execute] Failed to get global headers:', error);
+      // Continue without global headers
     }
 
     // Execute the code based on language

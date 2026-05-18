@@ -481,7 +481,7 @@ export default function ApiDetailPage() {
                   )}
 
                   {/* Terminal Content */}
-                  <div className="flex-1 overflow-auto relative custom-scrollbar bg-slate-50 dark:bg-[#050505]">
+                  <div className="flex-1 overflow-auto min-h-0 overscroll-contain relative custom-scrollbar bg-slate-50 dark:bg-[#050505]">
                     {sandboxLoading ? (
                       <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50/80 dark:bg-[#050505]/80 backdrop-blur-sm z-10">
                         <div className="relative flex items-center justify-center">
@@ -530,6 +530,12 @@ function syntaxHighlight(json: string) {
         cls = 'text-sky-600 dark:text-sky-400 font-semibold'; // key
       } else {
         cls = 'text-emerald-600 dark:text-emerald-400'; // string
+        // Make links clickable
+        let strContent = match.slice(1, -1);
+        if (strContent.includes('http://') || strContent.includes('https://')) {
+          strContent = strContent.replace(/(https?:\/\/[^\s\\"]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:underline cursor-pointer">$1</a>');
+          return '<span class="' + cls + '">"' + strContent + '"</span>';
+        }
       }
     } else if (/true|false/.test(match)) {
       cls = 'text-violet-600 dark:text-violet-400 font-bold'; // boolean
