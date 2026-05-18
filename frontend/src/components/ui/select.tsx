@@ -29,19 +29,22 @@ const SelectContext = React.createContext<{
   onValueChange: (value: string) => void
   open: boolean
   setOpen: (open: boolean) => void
+  containerRef: React.RefObject<HTMLDivElement | null>
 }>({
   value: "",
   onValueChange: () => {},
   open: false,
   setOpen: () => {},
+  containerRef: { current: null }
 })
 
 export function Select({ value, onValueChange, children }: SelectProps) {
   const [open, setOpen] = React.useState(false)
+  const containerRef = React.useRef<HTMLDivElement>(null)
 
   return (
-    <SelectContext.Provider value={{ value, onValueChange, open, setOpen }}>
-      <div className="relative">{children}</div>
+    <SelectContext.Provider value={{ value, onValueChange, open, setOpen, containerRef }}>
+      <div ref={containerRef} className="relative">{children}</div>
     </SelectContext.Provider>
   )
 }
@@ -65,18 +68,19 @@ export function SelectTrigger({ children, className }: SelectTriggerProps) {
 }
 
 export function SelectValue({ placeholder }: { placeholder?: string }) {
-  const { value } = React.useContext(SelectContext)
+  const { value, containerRef } = React.useContext(SelectContext)
   const [displayValue, setDisplayValue] = React.useState("")
 
   React.useEffect(() => {
-    // Find the selected item's text
-    const items = document.querySelectorAll('[data-select-item]')
+    // Find the selected item's text within this specific Select component
+    if (!containerRef.current) return;
+    const items = containerRef.current.querySelectorAll('[data-select-item]')
     items.forEach((item) => {
       if (item.getAttribute('data-value') === value) {
         setDisplayValue(item.textContent || "")
       }
     })
-  }, [value])
+  }, [value, containerRef])
 
   return <span>{displayValue || placeholder || "Select..."}</span>
 }
@@ -101,12 +105,13 @@ export function SelectContent({ children }: SelectContentProps) {
     }
   }, [open, setOpen])
 
-  if (!open) return null
-
   return (
     <div
       ref={ref}
-      className="absolute z-50 mt-1 max-h-96 w-full overflow-auto rounded-md border bg-popover text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95"
+      className={cn(
+        "absolute z-50 mt-1 max-h-96 w-full overflow-auto rounded-md border bg-popover text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95",
+        !open && "hidden"
+      )}
     >
       <div className="p-1">{children}</div>
     </div>
