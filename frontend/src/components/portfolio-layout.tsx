@@ -264,7 +264,7 @@ export function HeaderBar({
 
   return (
     <header
-      className="fixed top-0 right-0 z-50 border-b border-gray-200/60 dark:border-white/10 bg-white/80 dark:bg-background/30 backdrop-blur-xl supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-background/20 transition-[left] duration-200 ease-linear"
+      className="fixed top-0 right-0 z-50 border-b border-gray-200/60 dark:border-white/10 bg-white/80 dark:bg-background/30 backdrop-blur-md supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-background/20 transition-[left] duration-200 ease-linear"
       style={{ left: leftOffset }}
     >
       <div className="flex h-14 items-center justify-between px-4">

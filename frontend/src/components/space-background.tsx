@@ -176,7 +176,7 @@ function GasGiant() {
 
 export function SpaceBackground() {
   return (
-    <div className="fixed inset-0 -z-10 hidden dark:block pointer-events-none">
+    <div className="fixed inset-0 -z-10 hidden md:dark:block pointer-events-none">
       <Canvas
         dpr={[1, 1.5]}
         performance={{ min: 0.5 }}

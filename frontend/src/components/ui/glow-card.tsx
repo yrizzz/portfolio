@@ -12,7 +12,7 @@ interface GlowCardProps {
 export function GlowCard({ children, className = "", hoverScale = 1.02, onClick }: GlowCardProps) {
   return (
     <div
-      className={`relative rounded-xl bg-white/80 dark:bg-background/20 backdrop-blur-xl border border-gray-200/60 dark:border-white/10 transition-all duration-500 ease-out hover:-translate-y-1 ${className}`}
+      className={`relative rounded-xl bg-white/80 dark:bg-background/20 backdrop-blur-sm md:backdrop-blur-xl border border-gray-200/60 dark:border-white/10 transition-all duration-500 ease-out hover:-translate-y-1 ${className}`}
       style={{ 
         transform: `scale(1)`,
         willChange: "transform, box-shadow",
