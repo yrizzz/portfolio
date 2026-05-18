@@ -86,7 +86,7 @@ export default function ApisPage() {
         </FadeInOnScroll>
 
         {/* Filters Section */}
-        <FadeInOnScroll delay={0.1}>
+        <FadeInOnScroll delay={0.1} className="relative z-50">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4 bg-background/50 backdrop-blur-sm p-4 rounded-xl border">
             <div className="md:col-span-5 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
