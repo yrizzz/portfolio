@@ -254,6 +254,27 @@ export async function executeNodeJS(code: string, params: any, timeout: number =
 
     const paramsJson = JSON.stringify(params);
     const nodeCode = `
+// Patch module resolution so ALL require() calls (including internal deps like side-channel from qs)
+// can resolve from the project's node_modules directory
+const _Module = require('module');
+const _path = require('path');
+const _nmPaths = (process.env.NODE_PATH || '').split(':').filter(Boolean);
+const _origResolve = _Module._resolveFilename;
+_Module._resolveFilename = function(request, parent, isMain, options) {
+  try {
+    return _origResolve.call(this, request, parent, isMain, options);
+  } catch (err) {
+    if (!request.startsWith('.') && !request.startsWith('/')) {
+      for (const nmPath of _nmPaths) {
+        try {
+          return _origResolve.call(this, _path.join(nmPath, request), parent, isMain, options);
+        } catch {}
+      }
+    }
+    throw err;
+  }
+};
+
 const params = JSON.parse(${JSON.stringify(paramsJson)});
 
 // Add polyfills for file objects to support legacy file API
