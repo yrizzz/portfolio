@@ -46,6 +46,30 @@ const ALLOWED_MODULES = [
   '@google/generative-ai', 'https-proxy-agent',
 ];
 
+// NFT trace hints: these require.resolve() calls tell Vercel's Node File Tracing
+// to include these modules + all their transitive dependencies in the serverless bundle.
+// Without this, modules loaded dynamically via child_process won't be traced.
+if (typeof require !== 'undefined') {
+  try {
+    // Modules with deep dependency trees that NFT can't auto-trace
+    require.resolve('qs');
+    require.resolve('side-channel');
+    require.resolve('side-channel-list');
+    require.resolve('side-channel-map');
+    require.resolve('side-channel-weakmap');
+    require.resolve('call-bound');
+    require.resolve('get-intrinsic');
+    require.resolve('es-errors');
+    require.resolve('object-inspect');
+    require.resolve('axios');
+    require.resolve('form-data');
+    require.resolve('cheerio');
+    require.resolve('https-proxy-agent');
+  } catch (_) {
+    // Silently ignore - these are just hints for the bundler
+  }
+}
+
 /**
  * Convert ES6 import/export statements to CommonJS require/module.exports
  */

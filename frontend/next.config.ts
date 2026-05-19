@@ -12,6 +12,13 @@ const nextConfig: NextConfig = {
     'qrcode', 'jimp', 'pdf-lib', 'qs', 'dateformat',
     '@google/generative-ai', 'https-proxy-agent'
   ],
+  // Force-include all node_modules used by the code executor sandbox
+  // Vercel NFT can't trace dynamic child_process require() calls,
+  // so we explicitly include the full dependency trees
+  outputFileTracingIncludes: {
+    '/api/sandbox': ['./node_modules/**'],
+    '/api/execute': ['./node_modules/**'],
+  },
   /* config options here */
   allowedDevOrigins: ['192.168.101.8'],
   
