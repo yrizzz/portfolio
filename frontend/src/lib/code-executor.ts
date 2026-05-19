@@ -1,8 +1,9 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { writeFile, unlink, mkdir } from 'fs/promises';
+import { writeFile, unlink, mkdir, symlink, readlink } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
+import { existsSync } from 'fs';
 import crypto from 'crypto';
 
 const execAsync = promisify(exec);
@@ -197,6 +198,36 @@ export async function executeNodeJS(code: string, params: any, timeout: number =
 
     await mkdir(tempDir, { recursive: true });
 
+    // Create symlink to project node_modules in temp dir so sub-dependencies resolve
+    // (e.g., qs internally requires 'side-channel')
+    const nodeModulesSymlink = join(tempDir, 'node_modules');
+    const projectNodeModules = join(process.cwd(), 'node_modules');
+    
+    // Dynamically resolve actual node_modules path (for serverless/docker)
+    let actualNodeModules = projectNodeModules;
+    try {
+      const axiosPath = require.resolve('axios');
+      const nmIndex = axiosPath.lastIndexOf('node_modules');
+      if (nmIndex !== -1) {
+        actualNodeModules = axiosPath.substring(0, nmIndex + 12);
+      }
+    } catch {}
+
+    // Create/update symlink if it doesn't exist or points to wrong location
+    try {
+      if (existsSync(nodeModulesSymlink)) {
+        const target = await readlink(nodeModulesSymlink);
+        if (target !== actualNodeModules) {
+          await unlink(nodeModulesSymlink);
+          await symlink(actualNodeModules, nodeModulesSymlink, 'dir');
+        }
+      } else {
+        await symlink(actualNodeModules, nodeModulesSymlink, 'dir');
+      }
+    } catch (symlinkErr) {
+      console.warn('[Code Executor] Could not create node_modules symlink:', symlinkErr);
+    }
+
     const paramsJson = JSON.stringify(params);
     const nodeCode = `
 const params = JSON.parse(${JSON.stringify(paramsJson)});
@@ -260,25 +291,13 @@ ${convertedCode}
 
     await writeFile(tempFile, nodeCode);
 
-    // Dynamically find correct node_modules path, especially for serverless/docker environments
-    let resolvedNodePath = join(process.cwd(), 'node_modules');
-    try {
-      const axiosPath = require.resolve('axios');
-      const nmIndex = axiosPath.lastIndexOf('node_modules');
-      if (nmIndex !== -1) {
-        resolvedNodePath = axiosPath.substring(0, nmIndex + 12);
-      }
-    } catch (e) {
-      // Fallback to process.cwd()
-    }
-
     // Execute with memory limits
     const { stdout, stderr } = await execAsync(`node --max-old-space-size=128 --max-semi-space-size=16 ${tempFile}`, {
       timeout,
       maxBuffer: 10 * 1024 * 1024,
       env: {
         ...process.env,
-        NODE_PATH: resolvedNodePath,
+        NODE_PATH: [actualNodeModules, join(tempDir, 'node_modules')].join(':'),
         NODE_OPTIONS: '--no-warnings',
       },
       cwd: tempDir,
